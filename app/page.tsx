@@ -183,12 +183,10 @@ export default function Page() {
       password,
     });
 
-    if (error) {
-      setMessage("No se pudo iniciar sesión. Revisa el correo y la contraseña.");
-    }
-
-    setAuthLoading(false);
-  }
+   if (error) {
+  console.error("SUPABASE LOGIN ERROR:", error);
+  setMessage(`Error de acceso: ${error.message}`);
+}
 
   async function logout() {
     await supabase.auth.signOut();
