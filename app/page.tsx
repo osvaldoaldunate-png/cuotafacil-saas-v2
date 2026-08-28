@@ -81,6 +81,9 @@ export default function Page() {
   const [authLoading, setAuthLoading] = useState(false);
   const [message, setMessage] = useState("");
 
+  const [recoveryMode, setRecoveryMode] = useState(false);
+const [newPassword, setNewPassword] = useState("");
+
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
 
@@ -108,7 +111,12 @@ export default function Page() {
     });
 
     const { data: subscription } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      async (event, session) => {
+        if (event === "PASSWORD_RECOVERY") {
+  setRecoveryMode(true);
+  setSessionReady(true);
+  return;
+}
         if (session?.user) {
           await resolveAccess(session.user.id);
         } else {
@@ -172,7 +180,34 @@ export default function Page() {
     setRole("client");
     await loadBlancaNieves();
   }
+async function changePassword(e: React.FormEvent) {
+  e.preventDefault();
+  setAuthLoading(true);
+  setMessage("");
 
+  if (newPassword.length < 8) {
+    setMessage("La nueva contraseña debe tener al menos 8 caracteres.");
+    setAuthLoading(false);
+    return;
+  }
+
+  const { error } = await supabase.auth.updateUser({
+    password: newPassword,
+  });
+
+  if (error) {
+    setMessage(`No se pudo cambiar la contraseña: ${error.message}`);
+    setAuthLoading(false);
+    return;
+  }
+
+  setMessage("Contraseña actualizada correctamente.");
+  setRecoveryMode(false);
+  setNewPassword("");
+  await supabase.auth.signOut();
+  setRole("none");
+  setAuthLoading(false);
+}
   async function signIn(e: React.FormEvent) {
   e.preventDefault();
   setAuthLoading(true);
@@ -283,7 +318,51 @@ export default function Page() {
       </Centered>
     );
   }
+if (recoveryMode) {
+  return (
+    <main style={styles.authPage}>
+      <section style={styles.authCard}>
+        <div style={styles.authIcon}>
+          <ShieldCheck size={30} />
+        </div>
 
+        <p style={styles.eyebrow}>CUOTAFÁCIL · RECUPERACIÓN DE ACCESO</p>
+
+        <h1 style={styles.authTitle}>Crear nueva contraseña</h1>
+
+        <p style={styles.muted}>
+          Escribe una contraseña nueva para tu cuenta de CuotaFácil.
+        </p>
+
+        <form onSubmit={changePassword} style={styles.form}>
+          <label style={styles.label}>
+            Nueva contraseña
+            <input
+              style={styles.input}
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="Mínimo 8 caracteres"
+              required
+              minLength={8}
+            />
+          </label>
+
+          <button style={styles.primaryButton} disabled={authLoading}>
+            {authLoading ? (
+              <Loader2 className="spin" size={18} />
+            ) : (
+              <ShieldCheck size={18} />
+            )}
+            Guardar nueva contraseña
+          </button>
+        </form>
+
+        {message && <div style={styles.notice}>{message}</div>}
+      </section>
+    </main>
+  );
+}
   if (role === "none") {
     return (
       <main style={styles.authPage}>
