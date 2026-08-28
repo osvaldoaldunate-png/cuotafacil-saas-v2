@@ -1,761 +1,1212 @@
 "use client";
 
- 
-
-import { useEffect, useMemo, useState } from "react";
-
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { supabase } from "@/lib/supabase";
-
 import {
-
-  ArrowLeft, BarChart3, CircleDollarSign, GraduationCap, Loader2,
-
-  LogIn, LogOut, Mail, Plus, ReceiptText, RefreshCw, Search, UserPlus,
-
-  Users, WalletCards, X
-
+  AlertTriangle,
+  ArrowLeft,
+  Building2,
+  CheckCircle2,
+  CircleDollarSign,
+  GraduationCap,
+  LayoutDashboard,
+  Loader2,
+  LogIn,
+  LogOut,
+  ReceiptText,
+  RefreshCw,
+  Search,
+  ShieldCheck,
+  Users,
+  WalletCards,
 } from "lucide-react";
 
- 
+type Role = "loading" | "admin" | "client" | "none";
+type ClientModule = "home" | "students" | "payments" | "submissions";
 
-const BLANCA_SLUG = "escuela-blanca-nieves";
-
- 
-
-type Org = {
-
+type Organization = {
   id: string;
-
   name: string;
-
   slug: string;
-
-  industry: string | null;
-
-  plan: string | null;
-
-  status: string | null;
-
-  primary_color: string | null;
-
-  secondary_color: string | null;
-
 };
 
- 
-
-type Customer = {
-
-  id: string;
-
+type Membership = {
   org_id: string;
+  role: string;
+};
 
-  name: string;
-
+type Student = {
+  id: number;
+  student: string;
+  guardian: string | null;
   phone: string | null;
-
-  email: string | null;
-
+  course: string | null;
+  amount: number | null;
   notes: string | null;
-
-  active: boolean;
-
-  created_at: string;
-
 };
-
- 
-
-type Invoice = {
-
-  id: string;
-
-  org_id: string;
-
-  customer_id: string;
-
-  concept: string;
-
-  amount: number;
-
-  due_date: string;
-
-  status: "pending" | "paid" | "cancelled";
-
-  paid_at: string | null;
-
-  created_at: string;
-
-};
-
- 
 
 type Payment = {
-
-  id: string;
-
-  org_id: string;
-
-  invoice_id: string | null;
-
-  customer_id: string;
-
-  amount: number;
-
-  method: string | null;
-
-  reference: string | null;
-
-  paid_at: string;
-
-  created_at: string;
-
+  id: number;
+  student_id: number;
+  year: number;
+  month: string;
+  paid: boolean;
+  paid_date: string | null;
 };
 
- 
+type Submission = {
+  id: number;
+  student_id: number;
+  year: number;
+  months: string[] | string | null;
+  amount: number | null;
+  status: string | null;
+  receipt_path: string | null;
+};
 
-type Module = "home" | "people" | "fees" | "payments" | "reports";
-
- 
-
-function money(n: number) {
-
+function money(value: number) {
   return new Intl.NumberFormat("es-CL", {
-
     style: "currency",
-
     currency: "CLP",
-
     maximumFractionDigits: 0,
-
-  }).format(n || 0);
-
+  }).format(value || 0);
 }
-
- 
 
 export default function Page() {
-
   const [sessionReady, setSessionReady] = useState(false);
+  const [role, setRole] = useState<Role>("loading");
 
-  const [userEmail, setUserEmail] = useState("");
-
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
-  const [authMessage, setAuthMessage] = useState("");
-
   const [authLoading, setAuthLoading] = useState(false);
+  const [message, setMessage] = useState("");
 
-  const [loggedIn, setLoggedIn] = useState(false);
+  const [organization, setOrganization] = useState<Organization | null>(null);
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
 
- 
-
-  const [org, setOrg] = useState<Org | null>(null);
-
-  const [customers, setCustomers] = useState<Customer[]>([]);
-
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-
+  const [students, setStudents] = useState<Student[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
 
-  const [loading, setLoading] = useState(false);
-
-  const [module, setModule] = useState<Module>("home");
-
+  const [loadingData, setLoadingData] = useState(false);
+  const [module, setModule] = useState<ClientModule>("home");
   const [search, setSearch] = useState("");
 
-  const [personModal, setPersonModal] = useState(false);
-
-  const [feeModal, setFeeModal] = useState(false);
-
-  const [paymentModal, setPaymentModal] = useState(false);
-
- 
-
-  const [personForm, setPersonForm] = useState({ name: "", phone: "", email: "", notes: "" });
-
-  const [feeForm, setFeeForm] = useState({ customer_id: "", concept: "Cuota mensual", amount: "", due_date: "" });
-
-  const [paymentForm, setPaymentForm] = useState({ customer_id: "", invoice_id: "", amount: "", method: "Transferencia", reference: "" });
-
- 
-
   useEffect(() => {
+    let active = true;
 
-    let mounted = true;
+    supabase.auth.getSession().then(async ({ data }) => {
+      if (!active) return;
 
-    supabase.auth.getSession().then(({ data }) => {
-
-      if (!mounted) return;
-
-      setLoggedIn(!!data.session);
+      if (data.session?.user) {
+        await resolveAccess(data.session.user.id);
+      } else {
+        setRole("none");
+      }
 
       setSessionReady(true);
-
     });
 
-    const { data: authSub } = supabase.auth.onAuthStateChange((_event, session) => {
-
-      setLoggedIn(!!session);
-
-    });
-
-    return () => {
-
-      mounted = false;
-
-      authSub.subscription.unsubscribe();
-
-    };
-
-  }, []);
-
- 
-
-  useEffect(() => {
-
-    if (!loggedIn) return;
-
-    loadAll();
-
-  }, [loggedIn]);
-
- 
-
-  useEffect(() => {
-
-    if (!org?.id || !loggedIn) return;
-
- 
-
-    const channel = supabase
-
-      .channel(`blanca-nieves-${org.id}`)
-
-      .on("postgres_changes", { event: "*", schema: "public", table: "customers", filter: `org_id=eq.${org.id}` }, loadAll)
-
-      .on("postgres_changes", { event: "*", schema: "public", table: "invoices", filter: `org_id=eq.${org.id}` }, loadAll)
-
-      .on("postgres_changes", { event: "*", schema: "public", table: "payments", filter: `org_id=eq.${org.id}` }, loadAll)
-
-      .subscribe();
-
- 
-
-    return () => {
-
-      supabase.removeChannel(channel);
-
-    };
-
-  }, [org?.id, loggedIn]);
-
- 
-
-  async function signIn(e: React.FormEvent) {
-
-    e.preventDefault();
-
-    setAuthLoading(true);
-
-    setAuthMessage("");
-
-    const { error } = await supabase.auth.signInWithPassword({ email: userEmail, password });
-
-    setAuthLoading(false);
-
-    if (error) setAuthMessage("No se pudo iniciar sesión. Revisa el correo y la contraseña.");
-
-  }
-
- 
-
-  async function sendMagicLink() {
-
-    if (!userEmail.trim()) {
-
-      setAuthMessage("Escribe primero tu correo.");
-
-      return;
-
-    }
-
-    setAuthLoading(true);
-
-    setAuthMessage("");
-
-    const { error } = await supabase.auth.signInWithOtp({
-
-      email: userEmail,
-
-      options: { emailRedirectTo: window.location.origin },
-
-    });
-
-    setAuthLoading(false);
-
-    setAuthMessage(error ? "No se pudo enviar el enlace." : "Enlace de acceso enviado a tu correo.");
-
-  }
-
- 
-
-  async function logout() {
-
-    await supabase.auth.signOut();
-
-    setOrg(null);
-
-    setCustomers([]);
-
-    setInvoices([]);
-
-    setPayments([]);
-
-  }
-
- 
-
-  async function loadAll() {
-
-    setLoading(true);
-
-    const { data: orgData, error: orgError } = await supabase
-
-      .from("organizations")
-
-      .select("id,name,slug,industry,plan,status,primary_color,secondary_color")
-
-      .eq("slug", BLANCA_SLUG)
-
-      .single();
-
- 
-
-    if (orgError || !orgData) {
-
-      setOrg(null);
-
-      setLoading(false);
-
-      return;
-
-    }
-
- 
-
-    setOrg(orgData as Org);
-
- 
-
-    const [c, i, p] = await Promise.all([
-
-      supabase.from("customers").select("*").eq("org_id", orgData.id).order("name"),
-
-      supabase.from("invoices").select("*").eq("org_id", orgData.id).order("due_date", { ascending: false }),
-
-      supabase.from("payments").select("*").eq("org_id", orgData.id).order("paid_at", { ascending: false }),
-
-    ]);
-
- 
-
-    setCustomers((c.data || []) as Customer[]);
-
-    setInvoices((i.data || []) as Invoice[]);
-
-    setPayments((p.data || []) as Payment[]);
-
-    setLoading(false);
-
-  }
-
- 
-
-  async function addPerson(e: React.FormEvent) {
-
-    e.preventDefault();
-
-    if (!org || !personForm.name.trim()) return;
-
-    await supabase.from("customers").insert({
-
-      org_id: org.id,
-
-      name: personForm.name.trim(),
-
-      phone: personForm.phone.trim() || null,
-
-      email: personForm.email.trim() || null,
-
-      notes: personForm.notes.trim() || null,
-
-      active: true,
-
-    });
-
-    setPersonForm({ name: "", phone: "", email: "", notes: "" });
-
-    setPersonModal(false);
-
-    await loadAll();
-
-  }
-
- 
-
-  async function togglePerson(person: Customer) {
-
-    await supabase.from("customers").update({ active: !person.active }).eq("id", person.id);
-
-    await loadAll();
-
-  }
-
- 
-
-  async function addFee(e: React.FormEvent) {
-
-    e.preventDefault();
-
-    if (!org || !feeForm.customer_id || !feeForm.amount || !feeForm.due_date) return;
-
-    await supabase.from("invoices").insert({
-
-      org_id: org.id,
-
-      customer_id: feeForm.customer_id,
-
-      concept: feeForm.concept.trim() || "Cuota mensual",
-
-      amount: Number(feeForm.amount),
-
-      due_date: feeForm.due_date,
-
-      status: "pending",
-
-    });
-
-    setFeeForm({ customer_id: "", concept: "Cuota mensual", amount: "", due_date: "" });
-
-    setFeeModal(false);
-
-    await loadAll();
-
-  }
-
- 
-
-  async function addPayment(e: React.FormEvent) {
-
-    e.preventDefault();
-
-    if (!org || !paymentForm.customer_id || !paymentForm.amount) return;
-
-    const invoiceId = paymentForm.invoice_id || null;
-
-    await supabase.from("payments").insert({
-
-      org_id: org.id,
-
-      customer_id: paymentForm.customer_id,
-
-      invoice_id: invoiceId,
-
-      amount: Number(paymentForm.amount),
-
-      method: paymentForm.method,
-
-      reference: paymentForm.reference.trim() || null,
-
-      paid_at: new Date().toISOString(),
-
-    });
-
-    if (invoiceId) {
-
-      await supabase.from("invoices").update({ status: "paid", paid_at: new Date().toISOString() }).eq("id", invoiceId);
-
-    }
-
-    setPaymentForm({ customer_id: "", invoice_id: "", amount: "", method: "Transferencia", reference: "" });
-
-    setPaymentModal(false);
-
-    await loadAll();
-
-  }
-
- 
-
-  const pendingInvoices = invoices.filter((x) => x.status === "pending");
-
-  const paidTotal = payments.reduce((sum, x) => sum + Number(x.amount || 0), 0);
-
-  const pendingTotal = pendingInvoices.reduce((sum, x) => sum + Number(x.amount || 0), 0);
-
-  const overdueInvoices = pendingInvoices.filter((x) => new Date(x.due_date) < new Date());
-
-  const overdueTotal = overdueInvoices.reduce((sum, x) => sum + Number(x.amount || 0), 0);
-
- 
-
-  const filteredCustomers = useMemo(
-
-    () => customers.filter((c) => `${c.name} ${c.phone || ""} ${c.email || ""}`.toLowerCase().includes(search.toLowerCase())),
-
-    [customers, search]
-
-  );
-
- 
-
-  if (!sessionReady) {
-
-    return <Centered><Loader2 className="spin" /> Preparando acceso...</Centered>;
-
-  }
-
- 
-
-  if (!loggedIn) {
-
-    return (
-
-      <main className="authPage">
-
-        <section className="authCard">
-
-          <div className="schoolIcon"><GraduationCap /></div>
-
-          <p className="eyebrow">CUOTAFÁCIL · ACCESO SEGURO</p>
-
-          <h1>Escuela Blanca Nieves</h1>
-
-          <p className="muted">Inicia sesión para ver alumnos, cuotas y pagos reales.</p>
-
-          <form onSubmit={signIn} className="stack">
-
-            <label>Correo<input type="email" value={userEmail} onChange={(e) => setUserEmail(e.target.value)} required /></label>
-
-            <label>Contraseña<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required /></label>
-
-            <button className="primary wide" disabled={authLoading}>{authLoading ? <Loader2 className="spin" size={18} /> : <LogIn size={18} />} Iniciar sesión</button>
-
-          </form>
-
-          <button className="secondary wide" onClick={sendMagicLink} disabled={authLoading}><Mail size={18} /> Enviarme enlace de acceso</button>
-
-          {authMessage && <div className="notice">{authMessage}</div>}
-
-        </section>
-
-      </main>
-
+    const { data: subscription } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        if (session?.user) {
+          await resolveAccess(session.user.id);
+        } else {
+          setRole("none");
+          clearData();
+        }
+        setSessionReady(true);
+      }
     );
 
+    return () => {
+      active = false;
+      subscription.subscription.unsubscribe();
+    };
+  }, []);
+
+  async function resolveAccess(userId: string) {
+    setRole("loading");
+    setMessage("");
+
+    const { data: adminData, error: adminError } = await supabase
+      .from("platform_admins")
+      .select("user_id")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (!adminError && adminData) {
+      setRole("admin");
+      await loadMasterPanel();
+      return;
+    }
+
+    const { data: membershipData, error: membershipError } = await supabase
+      .from("memberships")
+      .select("org_id,role")
+      .eq("user_id", userId)
+      .limit(1)
+      .maybeSingle();
+
+    if (membershipError || !membershipData) {
+      setRole("none");
+      setMessage("Tu usuario existe, pero todavía no tiene una organización asignada.");
+      return;
+    }
+
+    const membership = membershipData as Membership;
+
+    const { data: orgData, error: orgError } = await supabase
+      .from("organizations")
+      .select("id,name,slug")
+      .eq("id", membership.org_id)
+      .single();
+
+    if (orgError || !orgData) {
+      setRole("none");
+      setMessage("No se pudo encontrar la organización asociada a este usuario.");
+      return;
+    }
+
+    setOrganization(orgData as Organization);
+    setRole("client");
+    await loadBlancaNieves();
   }
 
- 
+  async function signIn(e: React.FormEvent) {
+    e.preventDefault();
+    setAuthLoading(true);
+    setMessage("");
 
-  if (loading && !org) return <Centered><Loader2 className="spin" /> Cargando Escuela Blanca Nieves...</Centered>;
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
 
- 
+    if (error) {
+      setMessage("No se pudo iniciar sesión. Revisa el correo y la contraseña.");
+    }
 
-  if (!org) {
-
-    return <Centered>No se pudo acceder a Escuela Blanca Nieves. Cierra sesión y vuelve a entrar.</Centered>;
-
+    setAuthLoading(false);
   }
 
- 
-
-  return (
-
-    <main className="realApp">
-
-      <header className="realTopbar">
-
-        <div>
-
-          <p className="eyebrow">ORGANIZACIÓN REAL · SUPABASE</p>
-
-          <h1>{org.name}</h1>
-
-          <p className="muted">Datos sincronizados en tiempo real.</p>
-
-        </div>
-
-        <div className="topActions">
-
-          <button className="secondary" onClick={loadAll}><RefreshCw size={17} /> Actualizar</button>
-
-          <button className="secondary" onClick={logout}><LogOut size={17} /> Salir</button>
-
-        </div>
-
-      </header>
-
- 
-
-      {module !== "home" && <button className="backButton" onClick={() => setModule("home")}><ArrowLeft size={18} /> Volver al resumen</button>}
-
- 
-
-      {module === "home" && <>
-
-        <div className="metrics">
-
-          <Metric label="Personas / Alumnos" value={String(customers.filter((c) => c.active).length)} icon={<Users />} />
-
-          <Metric label="Recaudación registrada" value={money(paidTotal)} icon={<CircleDollarSign />} />
-
-          <Metric label="Cuotas pendientes" value={String(pendingInvoices.length)} icon={<ReceiptText />} />
-
-          <Metric label="Monto vencido" value={money(overdueTotal)} icon={<WalletCards />} />
-
-        </div>
-
- 
-
-        <section className="panel">
-
-          <h2>Gestión de {org.name}</h2>
-
-          <p className="muted">Estos módulos ya trabajan con la base real de la organización.</p>
-
-          <div className="moduleGrid">
-
-            <ModuleCard title="Personas / Alumnos" text={`${customers.length} registros reales`} icon={<Users />} onClick={() => setModule("people")} />
-
-            <ModuleCard title="Cuotas" text={`${pendingInvoices.length} pendientes`} icon={<ReceiptText />} onClick={() => setModule("fees")} />
-
-            <ModuleCard title="Pagos" text={money(paidTotal)} icon={<WalletCards />} onClick={() => setModule("payments")} />
-
-            <ModuleCard title="Reportes" text="Resumen actualizado" icon={<BarChart3 />} onClick={() => setModule("reports")} />
-
-          </div>
-
-        </section>
-
-      </>}
-
- 
-
-      {module === "people" && <section className="panel">
-
-        <div className="sectionHead">
-
-          <div><h2>Personas / Alumnos</h2><p className="muted">Registros reales de Escuela Blanca Nieves.</p></div>
-
-          <button className="primary" onClick={() => setPersonModal(true)}><UserPlus size={18} /> Agregar</button>
-
-        </div>
-
-        <div className="searchBox"><Search size={18} /><input placeholder="Buscar por nombre, teléfono o correo..." value={search} onChange={(e) => setSearch(e.target.value)} /></div>
-
-        <div className="tableWrap"><table><thead><tr><th>Nombre</th><th>Contacto</th><th>Estado</th><th></th></tr></thead><tbody>
-
-          {filteredCustomers.length === 0 ? <tr><td colSpan={4}>Aún no hay alumnos registrados.</td></tr> : filteredCustomers.map((p) => <tr key={p.id}><td><strong>{p.name}</strong><small>{p.notes || "Sin observaciones"}</small></td><td>{p.phone || p.email || "Sin contacto"}</td><td><span className={p.active ? "badge active" : "badge inactive"}>{p.active ? "Activo" : "Inactivo"}</span></td><td><button className="linkButton" onClick={() => togglePerson(p)}>{p.active ? "Desactivar" : "Activar"}</button></td></tr>)}
-
-        </tbody></table></div>
-
-      </section>}
-
- 
-
-      {module === "fees" && <section className="panel">
-
-        <div className="sectionHead"><div><h2>Cuotas</h2><p className="muted">Cargos reales asociados a cada alumno.</p></div><button className="primary" onClick={() => setFeeModal(true)}><Plus size={18}/> Nueva cuota</button></div>
-
-        <div className="tableWrap"><table><thead><tr><th>Alumno</th><th>Concepto</th><th>Monto</th><th>Vence</th><th>Estado</th></tr></thead><tbody>
-
-          {invoices.length === 0 ? <tr><td colSpan={5}>Aún no hay cuotas registradas.</td></tr> : invoices.map((i) => <tr key={i.id}><td>{customers.find((c) => c.id === i.customer_id)?.name || "Alumno"}</td><td>{i.concept}</td><td>{money(i.amount)}</td><td>{i.due_date}</td><td><span className={`badge ${i.status}`}>{i.status === "paid" ? "Pagada" : i.status === "cancelled" ? "Cancelada" : "Pendiente"}</span></td></tr>)}
-
-        </tbody></table></div>
-
-      </section>}
-
- 
-
-      {module === "payments" && <section className="panel">
-
-        <div className="sectionHead"><div><h2>Pagos</h2><p className="muted">Historial real de pagos registrados.</p></div><button className="primary" onClick={() => setPaymentModal(true)}><Plus size={18}/> Registrar pago</button></div>
-
-        <div className="tableWrap"><table><thead><tr><th>Alumno</th><th>Monto</th><th>Método</th><th>Fecha</th></tr></thead><tbody>
-
-          {payments.length === 0 ? <tr><td colSpan={4}>Aún no hay pagos registrados.</td></tr> : payments.map((p) => <tr key={p.id}><td>{customers.find((c) => c.id === p.customer_id)?.name || "Alumno"}</td><td>{money(p.amount)}</td><td>{p.method || "-"}</td><td>{new Date(p.paid_at).toLocaleDateString("es-CL")}</td></tr>)}
-
-        </tbody></table></div>
-
-      </section>}
-
- 
-
-      {module === "reports" && <section className="panel">
-
-        <h2>Reportes</h2><p className="muted">Resumen calculado directamente desde los datos reales.</p>
-
-        <div className="metrics reportMetrics">
-
-          <Metric label="Alumnos activos" value={String(customers.filter((c) => c.active).length)} icon={<Users />} />
-
-          <Metric label="Total pagado" value={money(paidTotal)} icon={<CircleDollarSign />} />
-
-          <Metric label="Total pendiente" value={money(pendingTotal)} icon={<ReceiptText />} />
-
-          <Metric label="Vencido" value={money(overdueTotal)} icon={<WalletCards />} />
-
-        </div>
-
-      </section>}
-
- 
-
-      {personModal && <Modal title="Agregar persona / alumno" onClose={() => setPersonModal(false)}><form onSubmit={addPerson} className="stack"><label>Nombre completo<input value={personForm.name} onChange={(e) => setPersonForm({ ...personForm, name: e.target.value })} required /></label><label>Teléfono<input value={personForm.phone} onChange={(e) => setPersonForm({ ...personForm, phone: e.target.value })} /></label><label>Correo<input type="email" value={personForm.email} onChange={(e) => setPersonForm({ ...personForm, email: e.target.value })} /></label><label>Observaciones<textarea value={personForm.notes} onChange={(e) => setPersonForm({ ...personForm, notes: e.target.value })} /></label><button className="primary wide">Guardar alumno</button></form></Modal>}
-
- 
-
-      {feeModal && <Modal title="Nueva cuota" onClose={() => setFeeModal(false)}><form onSubmit={addFee} className="stack"><label>Alumno<select value={feeForm.customer_id} onChange={(e) => setFeeForm({ ...feeForm, customer_id: e.target.value })} required><option value="">Seleccionar...</option>{customers.filter((c) => c.active).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label><label>Concepto<input value={feeForm.concept} onChange={(e) => setFeeForm({ ...feeForm, concept: e.target.value })} /></label><label>Monto<input type="number" min="1" value={feeForm.amount} onChange={(e) => setFeeForm({ ...feeForm, amount: e.target.value })} required /></label><label>Fecha de vencimiento<input type="date" value={feeForm.due_date} onChange={(e) => setFeeForm({ ...feeForm, due_date: e.target.value })} required /></label><button className="primary wide">Crear cuota</button></form></Modal>}
-
- 
-
-      {paymentModal && <Modal title="Registrar pago" onClose={() => setPaymentModal(false)}><form onSubmit={addPayment} className="stack"><label>Alumno<select value={paymentForm.customer_id} onChange={(e) => setPaymentForm({ ...paymentForm, customer_id: e.target.value, invoice_id: "" })} required><option value="">Seleccionar...</option>{customers.filter((c) => c.active).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label><label>Cuota asociada<select value={paymentForm.invoice_id} onChange={(e) => setPaymentForm({ ...paymentForm, invoice_id: e.target.value })}><option value="">Pago sin cuota específica</option>{pendingInvoices.filter((i) => !paymentForm.customer_id || i.customer_id === paymentForm.customer_id).map((i) => <option key={i.id} value={i.id}>{i.concept} · {money(i.amount)}</option>)}</select></label><label>Monto<input type="number" min="1" value={paymentForm.amount} onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })} required /></label><label>Método<select value={paymentForm.method} onChange={(e) => setPaymentForm({ ...paymentForm, method: e.target.value })}><option>Transferencia</option><option>Efectivo</option><option>Tarjeta</option><option>Otro</option></select></label><label>Referencia<input value={paymentForm.reference} onChange={(e) => setPaymentForm({ ...paymentForm, reference: e.target.value })} /></label><button className="primary wide">Guardar pago</button></form></Modal>}
-
-    </main>
-
+  async function logout() {
+    await supabase.auth.signOut();
+    clearData();
+    setRole("none");
+    setPassword("");
+  }
+
+  function clearData() {
+    setOrganization(null);
+    setOrganizations([]);
+    setStudents([]);
+    setPayments([]);
+    setSubmissions([]);
+    setModule("home");
+  }
+
+  async function loadMasterPanel() {
+    setLoadingData(true);
+
+    const { data } = await supabase
+      .from("organizations")
+      .select("id,name,slug")
+      .order("name");
+
+    setOrganizations((data || []) as Organization[]);
+
+    await loadBlancaNieves(false);
+    setLoadingData(false);
+  }
+
+  async function loadBlancaNieves(showLoader = true) {
+    if (showLoader) setLoadingData(true);
+
+    const [studentsResult, paymentsResult, submissionsResult] =
+      await Promise.all([
+        supabase.from("students").select("*").order("student"),
+        supabase.from("payments").select("*").order("id", { ascending: false }),
+        supabase
+          .from("payment_submissions")
+          .select("*")
+          .order("id", { ascending: false }),
+      ]);
+
+    setStudents((studentsResult.data || []) as Student[]);
+    setPayments((paymentsResult.data || []) as Payment[]);
+    setSubmissions((submissionsResult.data || []) as Submission[]);
+
+    if (showLoader) setLoadingData(false);
+  }
+
+  const totalExpected = useMemo(
+    () => students.reduce((sum, s) => sum + Number(s.amount || 0), 0),
+    [students]
   );
 
+  const paidCount = useMemo(
+    () => payments.filter((p) => p.paid).length,
+    [payments]
+  );
+
+  const approvedSubmissions = useMemo(
+    () => submissions.filter((s) => s.status === "approved").length,
+    [submissions]
+  );
+
+  const pendingSubmissions = useMemo(
+    () =>
+      submissions.filter(
+        (s) => s.status !== "approved" && s.status !== "rejected"
+      ).length,
+    [submissions]
+  );
+
+  const filteredStudents = useMemo(() => {
+    const q = search.toLowerCase().trim();
+    if (!q) return students;
+
+    return students.filter((s) =>
+      `${s.student} ${s.guardian || ""} ${s.phone || ""} ${s.course || ""}`
+        .toLowerCase()
+        .includes(q)
+    );
+  }, [students, search]);
+
+  if (!sessionReady || role === "loading") {
+    return (
+      <Centered>
+        <Loader2 className="spin" size={28} />
+        Preparando CuotaFácil...
+      </Centered>
+    );
+  }
+
+  if (role === "none") {
+    return (
+      <main style={styles.authPage}>
+        <section style={styles.authCard}>
+          <div style={styles.authIcon}>
+            <GraduationCap size={30} />
+          </div>
+
+          <p style={styles.eyebrow}>CUOTAFÁCIL · ACCESO SEGURO</p>
+
+          <h1 style={styles.authTitle}>Bienvenido a CuotaFácil</h1>
+
+          <p style={styles.muted}>
+            Ingresa con tu cuenta. El sistema abrirá automáticamente el panel
+            que corresponde a tu perfil.
+          </p>
+
+          <form onSubmit={signIn} style={styles.form}>
+            <label style={styles.label}>
+              Correo electrónico
+              <input
+                style={styles.input}
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="correo@ejemplo.cl"
+                required
+              />
+            </label>
+
+            <label style={styles.label}>
+              Contraseña
+              <input
+                style={styles.input}
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+              />
+            </label>
+
+            <button style={styles.primaryButton} disabled={authLoading}>
+              {authLoading ? (
+                <Loader2 className="spin" size={18} />
+              ) : (
+                <LogIn size={18} />
+              )}
+              Iniciar sesión
+            </button>
+          </form>
+
+          {message && <div style={styles.notice}>{message}</div>}
+
+          <div style={styles.securityBox}>
+            <ShieldCheck size={20} />
+            <span>Acceso protegido mediante Supabase Auth</span>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  if (role === "admin") {
+    return (
+      <main style={styles.app}>
+        <header style={styles.header}>
+          <div>
+            <p style={styles.eyebrow}>PANEL MAESTRO · CUOTAFÁCIL</p>
+            <h1 style={styles.title}>Tu plataforma, todos tus clientes.</h1>
+            <p style={styles.muted}>
+              Administración general de organizaciones y operaciones.
+            </p>
+          </div>
+
+          <div style={styles.headerActions}>
+            <button style={styles.secondaryButton} onClick={loadMasterPanel}>
+              <RefreshCw size={17} />
+              Actualizar
+            </button>
+
+            <button style={styles.secondaryButton} onClick={logout}>
+              <LogOut size={17} />
+              Salir
+            </button>
+          </div>
+        </header>
+
+        <section style={styles.metricGrid}>
+          <MetricCard
+            icon={<Building2 />}
+            label="Organizaciones"
+            value={String(organizations.length)}
+          />
+          <MetricCard
+            icon={<Users />}
+            label="Personas registradas"
+            value={String(students.length)}
+          />
+          <MetricCard
+            icon={<WalletCards />}
+            label="Pagos registrados"
+            value={String(paidCount)}
+          />
+          <MetricCard
+            icon={<ReceiptText />}
+            label="Comprobantes aprobados"
+            value={String(approvedSubmissions)}
+          />
+        </section>
+
+        <section style={styles.panel}>
+          <div style={styles.panelHeader}>
+            <div>
+              <h2 style={styles.sectionTitle}>Organizaciones</h2>
+              <p style={styles.muted}>
+                Clientes vinculados actualmente a CuotaFácil.
+              </p>
+            </div>
+          </div>
+
+          {loadingData ? (
+            <div style={styles.loading}>
+              <Loader2 className="spin" />
+              Actualizando...
+            </div>
+          ) : (
+            <div style={styles.orgGrid}>
+              {organizations.map((org) => (
+                <article key={org.id} style={styles.orgCard}>
+                  <div style={styles.orgIcon}>
+                    <GraduationCap />
+                  </div>
+
+                  <h3 style={{ margin: "16px 0 5px" }}>{org.name}</h3>
+
+                  <p style={styles.muted}>Organización activa</p>
+
+                  <div style={styles.chips}>
+                    <span style={styles.activeChip}>Activo</span>
+                    <span style={styles.planChip}>Cliente</span>
+                  </div>
+
+                  {org.slug === "blanca-nieves" && (
+                    <div style={styles.orgStats}>
+                      <div>
+                        <strong>{students.length}</strong>
+                        <small> alumnos</small>
+                      </div>
+                      <div>
+                        <strong>{paidCount}</strong>
+                        <small> pagos</small>
+                      </div>
+                    </div>
+                  )}
+
+                  <button
+                    style={styles.openButton}
+                    onClick={() =>
+                      alert(
+                        "La gestión detallada de esta organización será el siguiente módulo."
+                      )
+                    }
+                  >
+                    Ver organización →
+                  </button>
+                </article>
+              ))}
+
+              {organizations.length === 0 && (
+                <p style={styles.muted}>Todavía no hay organizaciones.</p>
+              )}
+            </div>
+          )}
+        </section>
+
+        <section style={{ ...styles.panel, marginTop: 20 }}>
+          <h2 style={styles.sectionTitle}>Resumen Blanca Nieves</h2>
+          <p style={styles.muted}>
+            Primera organización real conectada a la plataforma.
+          </p>
+
+          <div style={{ ...styles.metricGrid, marginTop: 18 }}>
+            <SmallMetric label="Alumnos" value={String(students.length)} />
+            <SmallMetric label="Pagos" value={String(paidCount)} />
+            <SmallMetric
+              label="Comprobantes"
+              value={String(submissions.length)}
+            />
+            <SmallMetric
+              label="Monto base"
+              value={money(totalExpected)}
+            />
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  return (
+    <main style={styles.app}>
+      <header style={styles.header}>
+        <div>
+          <p style={styles.eyebrow}>PANEL DE ORGANIZACIÓN</p>
+          <h1 style={styles.title}>
+            {organization?.name || "Escuela Blanca Nieves"}
+          </h1>
+          <p style={styles.muted}>
+            Datos reales sincronizados con Supabase.
+          </p>
+        </div>
+
+        <div style={styles.headerActions}>
+          <button
+            style={styles.secondaryButton}
+            onClick={() => loadBlancaNieves()}
+          >
+            <RefreshCw size={17} />
+            Actualizar
+          </button>
+
+          <button style={styles.secondaryButton} onClick={logout}>
+            <LogOut size={17} />
+            Salir
+          </button>
+        </div>
+      </header>
+
+      {module !== "home" && (
+        <button
+          style={styles.backButton}
+          onClick={() => setModule("home")}
+        >
+          <ArrowLeft size={18} />
+          Volver al resumen
+        </button>
+      )}
+
+      {module === "home" && (
+        <>
+          <section style={styles.metricGrid}>
+            <MetricCard
+              icon={<Users />}
+              label="Alumnos"
+              value={String(students.length)}
+            />
+            <MetricCard
+              icon={<CheckCircle2 />}
+              label="Pagos registrados"
+              value={String(paidCount)}
+            />
+            <MetricCard
+              icon={<ReceiptText />}
+              label="Comprobantes"
+              value={String(submissions.length)}
+            />
+            <MetricCard
+              icon={<CircleDollarSign />}
+              label="Monto mensual base"
+              value={money(totalExpected)}
+            />
+          </section>
+
+          <section style={styles.panel}>
+            <h2 style={styles.sectionTitle}>Gestión de Blanca Nieves</h2>
+            <p style={styles.muted}>
+              Selecciona el módulo que deseas revisar.
+            </p>
+
+            <div style={styles.moduleGrid}>
+              <ModuleButton
+                icon={<Users />}
+                title="Alumnos"
+                text={`${students.length} registros`}
+                onClick={() => setModule("students")}
+              />
+              <ModuleButton
+                icon={<WalletCards />}
+                title="Pagos"
+                text={`${paidCount} pagos registrados`}
+                onClick={() => setModule("payments")}
+              />
+              <ModuleButton
+                icon={<ReceiptText />}
+                title="Comprobantes"
+                text={`${submissions.length} solicitudes`}
+                onClick={() => setModule("submissions")}
+              />
+              <ModuleButton
+                icon={<LayoutDashboard />}
+                title="Resumen"
+                text={`${approvedSubmissions} aprobados`}
+                onClick={() => setModule("home")}
+              />
+            </div>
+          </section>
+        </>
+      )}
+
+      {module === "students" && (
+        <section style={styles.panel}>
+          <div style={styles.panelHeader}>
+            <div>
+              <h2 style={styles.sectionTitle}>Alumnos</h2>
+              <p style={styles.muted}>
+                Información real almacenada en la tabla students.
+              </p>
+            </div>
+
+            <div style={styles.searchBox}>
+              <Search size={18} />
+              <input
+                style={styles.searchInput}
+                placeholder="Buscar alumno, apoderado o curso..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div style={styles.tableWrap}>
+            <table style={styles.table}>
+              <thead>
+                <tr>
+                  <th style={styles.th}>Alumno</th>
+                  <th style={styles.th}>Apoderado</th>
+                  <th style={styles.th}>Teléfono</th>
+                  <th style={styles.th}>Curso</th>
+                  <th style={styles.th}>Monto</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredStudents.map((student) => (
+                  <tr key={student.id}>
+                    <td style={styles.td}>
+                      <strong>{student.student}</strong>
+                    </td>
+                    <td style={styles.td}>{student.guardian || "—"}</td>
+                    <td style={styles.td}>{student.phone || "—"}</td>
+                    <td style={styles.td}>{student.course || "—"}</td>
+                    <td style={styles.td}>
+                      {money(Number(student.amount || 0))}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      {module === "payments" && (
+        <section style={styles.panel}>
+          <h2 style={styles.sectionTitle}>Pagos registrados</h2>
+          <p style={styles.muted}>
+            Mensualidades almacenadas en la tabla payments.
+          </p>
+
+          <div style={{ ...styles.tableWrap, marginTop: 18 }}>
+            <table style={styles.table}>
+              <thead>
+                <tr>
+                  <th style={styles.th}>Alumno</th>
+                  <th style={styles.th}>Año</th>
+                  <th style={styles.th}>Mes</th>
+                  <th style={styles.th}>Estado</th>
+                  <th style={styles.th}>Fecha pago</th>
+                </tr>
+              </thead>
+              <tbody>
+                {payments.map((payment) => {
+                  const student = students.find(
+                    (s) => s.id === payment.student_id
+                  );
+
+                  return (
+                    <tr key={payment.id}>
+                      <td style={styles.td}>
+                        {student?.student || `Alumno #${payment.student_id}`}
+                      </td>
+                      <td style={styles.td}>{payment.year}</td>
+                      <td style={styles.td}>{payment.month}</td>
+                      <td style={styles.td}>
+                        <span
+                          style={
+                            payment.paid
+                              ? styles.approvedChip
+                              : styles.pendingChip
+                          }
+                        >
+                          {payment.paid ? "Pagado" : "Pendiente"}
+                        </span>
+                      </td>
+                      <td style={styles.td}>
+                        {payment.paid_date || "—"}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      {module === "submissions" && (
+        <section style={styles.panel}>
+          <h2 style={styles.sectionTitle}>Comprobantes enviados</h2>
+          <p style={styles.muted}>
+            Solicitudes almacenadas en payment_submissions.
+          </p>
+
+          <div style={{ ...styles.tableWrap, marginTop: 18 }}>
+            <table style={styles.table}>
+              <thead>
+                <tr>
+                  <th style={styles.th}>Alumno</th>
+                  <th style={styles.th}>Año</th>
+                  <th style={styles.th}>Meses</th>
+                  <th style={styles.th}>Monto</th>
+                  <th style={styles.th}>Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {submissions.map((submission) => {
+                  const student = students.find(
+                    (s) => s.id === submission.student_id
+                  );
+
+                  return (
+                    <tr key={submission.id}>
+                      <td style={styles.td}>
+                        {student?.student ||
+                          `Alumno #${submission.student_id}`}
+                      </td>
+                      <td style={styles.td}>{submission.year}</td>
+                      <td style={styles.td}>
+                        {Array.isArray(submission.months)
+                          ? submission.months.join(", ")
+                          : String(submission.months || "—")
+                              .replaceAll("[", "")
+                              .replaceAll("]", "")
+                              .replaceAll('"', "")}
+                      </td>
+                      <td style={styles.td}>
+                        {money(Number(submission.amount || 0))}
+                      </td>
+                      <td style={styles.td}>
+                        <StatusChip status={submission.status || "pending"} />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      {loadingData && (
+        <div style={styles.loadingOverlay}>
+          <Loader2 className="spin" />
+          Actualizando información...
+        </div>
+      )}
+    </main>
+  );
 }
 
- 
-
-function Metric({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) {
-
-  return <article className="metric"><div className="metricIcon">{icon}</div><div><p>{label}</p><strong>{value}</strong></div></article>;
-
+function MetricCard({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+}) {
+  return (
+    <article style={styles.metricCard}>
+      <div style={styles.metricIcon}>{icon}</div>
+      <div>
+        <p style={styles.metricLabel}>{label}</p>
+        <strong style={styles.metricValue}>{value}</strong>
+      </div>
+    </article>
+  );
 }
 
- 
-
-function ModuleCard({ title, text, icon, onClick }: { title: string; text: string; icon: React.ReactNode; onClick: () => void }) {
-
-  return <button className="moduleCard" onClick={onClick}><div className="metricIcon">{icon}</div><h3>{title}</h3><p>{text}</p><span>Abrir →</span></button>;
-
+function SmallMetric({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div style={styles.smallMetric}>
+      <span style={styles.muted}>{label}</span>
+      <strong>{value}</strong>
+    </div>
+  );
 }
 
- 
-
-function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
-
-  return <div className="modalBack" onMouseDown={onClose}><div className="modal" onMouseDown={(e) => e.stopPropagation()}><div className="modalHead"><h2>{title}</h2><button className="iconBtn" onClick={onClose}><X /></button></div>{children}</div></div>;
-
+function ModuleButton({
+  icon,
+  title,
+  text,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  text: string;
+  onClick: () => void;
+}) {
+  return (
+    <button style={styles.moduleButton} onClick={onClick}>
+      <div style={styles.moduleIcon}>{icon}</div>
+      <strong style={{ fontSize: 17 }}>{title}</strong>
+      <span style={styles.muted}>{text}</span>
+      <span style={styles.moduleOpen}>Abrir →</span>
+    </button>
+  );
 }
 
- 
+function StatusChip({ status }: { status: string }) {
+  const normalized = status.toLowerCase();
+
+  if (normalized === "approved") {
+    return <span style={styles.approvedChip}>Aprobado</span>;
+  }
+
+  if (normalized === "rejected") {
+    return <span style={styles.rejectedChip}>Rechazado</span>;
+  }
+
+  return <span style={styles.pendingChip}>Pendiente</span>;
+}
 
 function Centered({ children }: { children: React.ReactNode }) {
-
-  return <main className="centered"><div className="notice">{children}</div></main>;
-
+  return <main style={styles.centered}>{children}</main>;
 }
+
+const styles: Record<string, CSSProperties> = {
+  centered: {
+    minHeight: "100vh",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    fontFamily: "Arial, sans-serif",
+    background: "#f5f7fb",
+    color: "#101828",
+  },
+  authPage: {
+    minHeight: "100vh",
+    display: "grid",
+    placeItems: "center",
+    padding: 20,
+    background:
+      "radial-gradient(circle at top left,#eef2ff 0,#f7f8fc 40%,#f7f8fc 100%)",
+    fontFamily: "Arial, sans-serif",
+  },
+  authCard: {
+    width: "100%",
+    maxWidth: 480,
+    background: "#fff",
+    border: "1px solid #e4e7ec",
+    borderRadius: 24,
+    padding: 32,
+    boxShadow: "0 20px 60px rgba(16,24,40,.10)",
+  },
+  authIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    display: "grid",
+    placeItems: "center",
+    color: "#4f46e5",
+    background: "#eef2ff",
+    marginBottom: 18,
+  },
+  eyebrow: {
+    margin: "0 0 8px",
+    color: "#4f46e5",
+    fontWeight: 800,
+    fontSize: 12,
+    letterSpacing: "0.14em",
+  },
+  authTitle: {
+    margin: "0 0 10px",
+    fontSize: 32,
+    color: "#101828",
+  },
+  muted: {
+    color: "#667085",
+    margin: 0,
+  },
+  form: {
+    display: "grid",
+    gap: 15,
+    marginTop: 24,
+  },
+  label: {
+    display: "grid",
+    gap: 7,
+    fontWeight: 700,
+    fontSize: 14,
+    color: "#344054",
+  },
+  input: {
+    width: "100%",
+    border: "1px solid #d0d5dd",
+    borderRadius: 12,
+    padding: "12px 13px",
+    outline: "none",
+  },
+  primaryButton: {
+    border: 0,
+    borderRadius: 12,
+    padding: "13px 16px",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 8,
+    background: "linear-gradient(135deg,#4f46e5,#7c3aed)",
+    color: "#fff",
+    fontWeight: 800,
+    cursor: "pointer",
+  },
+  secondaryButton: {
+    border: "1px solid #d0d5dd",
+    borderRadius: 11,
+    background: "#fff",
+    padding: "10px 13px",
+    display: "flex",
+    alignItems: "center",
+    gap: 7,
+    fontWeight: 700,
+    cursor: "pointer",
+  },
+  notice: {
+    marginTop: 16,
+    padding: 12,
+    borderRadius: 10,
+    background: "#fff7ed",
+    color: "#9a3412",
+    fontSize: 14,
+  },
+  securityBox: {
+    marginTop: 18,
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    padding: 12,
+    borderRadius: 12,
+    background: "#f8fafc",
+    color: "#667085",
+    fontSize: 13,
+  },
+  app: {
+    minHeight: "100vh",
+    background: "#f5f7fb",
+    padding: "32px",
+    fontFamily: "Arial, sans-serif",
+    color: "#101828",
+  },
+  header: {
+    maxWidth: 1450,
+    margin: "0 auto 24px",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: 20,
+  },
+  headerActions: {
+    display: "flex",
+    gap: 10,
+    flexWrap: "wrap",
+  },
+  title: {
+    margin: "0 0 7px",
+    fontSize: 34,
+    letterSpacing: "-0.03em",
+  },
+  metricGrid: {
+    maxWidth: 1450,
+    margin: "0 auto 22px",
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit,minmax(210px,1fr))",
+    gap: 14,
+  },
+  metricCard: {
+    display: "flex",
+    gap: 13,
+    alignItems: "center",
+    background: "#fff",
+    border: "1px solid #e4e7ec",
+    borderRadius: 18,
+    padding: 18,
+  },
+  metricIcon: {
+    width: 46,
+    height: 46,
+    display: "grid",
+    placeItems: "center",
+    borderRadius: 13,
+    background: "#eef2ff",
+    color: "#4f46e5",
+    flexShrink: 0,
+  },
+  metricLabel: {
+    color: "#667085",
+    fontSize: 13,
+    margin: "0 0 4px",
+  },
+  metricValue: {
+    fontSize: 25,
+  },
+  panel: {
+    maxWidth: 1450,
+    margin: "0 auto",
+    background: "#fff",
+    border: "1px solid #e4e7ec",
+    borderRadius: 20,
+    padding: 22,
+  },
+  panelHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    gap: 18,
+    alignItems: "center",
+    flexWrap: "wrap",
+  },
+  sectionTitle: {
+    margin: "0 0 6px",
+    fontSize: 24,
+  },
+  orgGrid: {
+    marginTop: 20,
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit,minmax(250px,1fr))",
+    gap: 15,
+  },
+  orgCard: {
+    border: "1px solid #e4e7ec",
+    borderRadius: 17,
+    padding: 18,
+  },
+  orgIcon: {
+    width: 46,
+    height: 46,
+    display: "grid",
+    placeItems: "center",
+    borderRadius: 13,
+    background: "#eef2ff",
+    color: "#4f46e5",
+  },
+  chips: {
+    display: "flex",
+    gap: 8,
+    marginTop: 14,
+  },
+  activeChip: {
+    borderRadius: 999,
+    padding: "5px 9px",
+    background: "#ecfdf3",
+    color: "#067647",
+    fontWeight: 800,
+    fontSize: 12,
+  },
+  planChip: {
+    borderRadius: 999,
+    padding: "5px 9px",
+    background: "#f2f4f7",
+    fontWeight: 800,
+    fontSize: 12,
+  },
+  orgStats: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: 10,
+    padding: "14px 0",
+    marginTop: 14,
+    borderTop: "1px solid #e4e7ec",
+    borderBottom: "1px solid #e4e7ec",
+  },
+  openButton: {
+    width: "100%",
+    border: 0,
+    background: "transparent",
+    textAlign: "left",
+    color: "#4f46e5",
+    fontWeight: 800,
+    padding: "14px 0 0",
+    cursor: "pointer",
+  },
+  smallMetric: {
+    border: "1px solid #e4e7ec",
+    borderRadius: 14,
+    padding: 15,
+    display: "grid",
+    gap: 6,
+  },
+  moduleGrid: {
+    marginTop: 20,
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))",
+    gap: 15,
+  },
+  moduleButton: {
+    border: "1px solid #e4e7ec",
+    background: "#fff",
+    borderRadius: 17,
+    padding: 18,
+    textAlign: "left",
+    cursor: "pointer",
+    display: "grid",
+    gap: 9,
+  },
+  moduleIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    display: "grid",
+    placeItems: "center",
+    background: "#eef2ff",
+    color: "#4f46e5",
+  },
+  moduleOpen: {
+    color: "#4f46e5",
+    fontWeight: 800,
+    marginTop: 5,
+  },
+  backButton: {
+    maxWidth: 1450,
+    margin: "0 auto 16px",
+    border: 0,
+    background: "transparent",
+    color: "#4f46e5",
+    fontWeight: 800,
+    display: "flex",
+    gap: 7,
+    alignItems: "center",
+    cursor: "pointer",
+  },
+  searchBox: {
+    minWidth: 300,
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    border: "1px solid #d0d5dd",
+    borderRadius: 11,
+    padding: "0 11px",
+  },
+  searchInput: {
+    border: 0,
+    outline: 0,
+    width: "100%",
+    padding: "11px 0",
+  },
+  tableWrap: {
+    width: "100%",
+    overflowX: "auto",
+  },
+  table: {
+    width: "100%",
+    borderCollapse: "collapse",
+    minWidth: 720,
+  },
+  th: {
+    textAlign: "left",
+    padding: "13px 12px",
+    fontSize: 12,
+    color: "#667085",
+    borderBottom: "1px solid #e4e7ec",
+  },
+  td: {
+    padding: "14px 12px",
+    borderBottom: "1px solid #f0f1f3",
+    fontSize: 14,
+  },
+  approvedChip: {
+    borderRadius: 999,
+    padding: "5px 9px",
+    background: "#ecfdf3",
+    color: "#067647",
+    fontWeight: 800,
+    fontSize: 12,
+  },
+  rejectedChip: {
+    borderRadius: 999,
+    padding: "5px 9px",
+    background: "#fef3f2",
+    color: "#b42318",
+    fontWeight: 800,
+    fontSize: 12,
+  },
+  pendingChip: {
+    borderRadius: 999,
+    padding: "5px 9px",
+    background: "#fff7ed",
+    color: "#b54708",
+    fontWeight: 800,
+    fontSize: 12,
+  },
+  loading: {
+    padding: 35,
+    display: "flex",
+    justifyContent: "center",
+    gap: 10,
+    color: "#667085",
+  },
+  loadingOverlay: {
+    position: "fixed",
+    right: 20,
+    bottom: 20,
+    padding: "12px 16px",
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    borderRadius: 12,
+    background: "#101828",
+    color: "#fff",
+    boxShadow: "0 10px 30px rgba(0,0,0,.18)",
+  },
+};
