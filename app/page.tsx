@@ -174,18 +174,21 @@ export default function Page() {
   }
 
   async function signIn(e: React.FormEvent) {
-    e.preventDefault();
-    setAuthLoading(true);
-    setMessage("");
+  e.preventDefault();
+  setAuthLoading(true);
+  setMessage("");
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    });
+  const { error } = await supabase.auth.signInWithPassword({
+    email: email.trim(),
+    password,
+  });
 
-   if (error) {
-  console.error("SUPABASE LOGIN ERROR:", error);
-  setMessage(`Error de acceso: ${error.message}`);
+  if (error) {
+    console.error("SUPABASE LOGIN ERROR:", error);
+    setMessage(`Error de acceso: ${error.message}`);
+  }
+
+  setAuthLoading(false);
 }
 
   async function logout() {
