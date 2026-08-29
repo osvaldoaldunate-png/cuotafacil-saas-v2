@@ -95,44 +95,60 @@ const [newPassword, setNewPassword] = useState("");
   const [module, setModule] = useState<ClientModule>("home");
   const [search, setSearch] = useState("");
 
-  useEffect(() => {
-    let active = true;
+ useEffect(() => {
+  let active = true;
 
-    supabase.auth.getSession().then(async ({ data }) => {
-      if (!active) return;
+  const recoveryFromUrl =
+    window.location.hash.includes("type=recovery") ||
+    window.location.search.includes("type=recovery");
 
-      if (data.session?.user) {
-        await resolveAccess(data.session.user.id);
+  if (recoveryFromUrl) {
+    setRecoveryMode(true);
+    setSessionReady(true);
+  }
+
+  supabase.auth.getSession().then(async ({ data }) => {
+    if (!active) return;
+
+    if (recoveryFromUrl) {
+      setRecoveryMode(true);
+      setSessionReady(true);
+      return;
+    }
+
+    if (data.session?.user) {
+      await resolveAccess(data.session.user.id);
+    } else {
+      setRole("none");
+    }
+
+    setSessionReady(true);
+  });
+
+  const { data: subscription } = supabase.auth.onAuthStateChange(
+    async (event, session) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setRecoveryMode(true);
+        setSessionReady(true);
+        return;
+      }
+
+      if (session?.user) {
+        await resolveAccess(session.user.id);
       } else {
         setRole("none");
+        clearData();
       }
 
       setSessionReady(true);
-    });
+    }
+  );
 
-    const { data: subscription } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === "PASSWORD_RECOVERY") {
-  setRecoveryMode(true);
-  setSessionReady(true);
-  return;
-}
-        if (session?.user) {
-          await resolveAccess(session.user.id);
-        } else {
-          setRole("none");
-          clearData();
-        }
-        setSessionReady(true);
-      }
-    );
-
-    return () => {
-      active = false;
-      subscription.subscription.unsubscribe();
-    };
-  }, []);
-
+  return () => {
+    active = false;
+    subscription.subscription.unsubscribe();
+  };
+}, []);
   async function resolveAccess(userId: string) {
     setRole("loading");
     setMessage("");
