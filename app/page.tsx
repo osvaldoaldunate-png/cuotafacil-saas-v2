@@ -95,39 +95,97 @@ const [newPassword, setNewPassword] = useState("");
   const [module, setModule] = useState<ClientModule>("home");
   const [search, setSearch] = useState("");
 
- useEffect(() => {
+useEffect(() => {
   let active = true;
 
-  const recoveryFromUrl =
-    window.location.hash.includes("type=recovery") ||
-    window.location.search.includes("type=recovery");
+  async function initializeAuth() {
+    const url = new URL(window.location.href);
+    const hashParams = new URLSearchParams(
+      window.location.hash.replace(/^#/, "")
+    );
 
-  if (recoveryFromUrl) {
-    setRecoveryMode(true);
-    setSessionReady(true);
-  }
+    const type =
+      url.searchParams.get("type") || hashParams.get("type");
 
-  supabase.auth.getSession().then(async ({ data }) => {
-    if (!active) return;
+    const code = url.searchParams.get("code");
+    const accessToken = hashParams.get("access_token");
+    const refreshToken = hashParams.get("refresh_token");
 
-    if (recoveryFromUrl) {
+    const isRecovery = type === "recovery";
+
+    if (isRecovery) {
+      setRecoveryMode(true);
+      setSessionReady(false);
+
+      // Recuperación mediante PKCE (?code=...)
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+
+        if (error) {
+          setMessage(`No se pudo validar el enlace: ${error.message}`);
+          setSessionReady(true);
+          return;
+        }
+      }
+
+      // Recuperación mediante tokens en el hash (#access_token=...)
+      if (accessToken && refreshToken) {
+        const { error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+
+        if (error) {
+          setMessage(`No se pudo validar el enlace: ${error.message}`);
+          setSessionReady(true);
+          return;
+        }
+      }
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!active) return;
+
+      if (session?.user) {
+        setRecoveryMode(true);
+        setSessionReady(true);
+        return;
+      }
+
+      setMessage(
+        "El enlace de recuperación no generó una sesión válida. Solicita un enlace nuevo."
+      );
       setRecoveryMode(true);
       setSessionReady(true);
       return;
     }
 
-    if (data.session?.user) {
-      await resolveAccess(data.session.user.id);
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!active) return;
+
+    if (session?.user) {
+      await resolveAccess(session.user.id);
     } else {
       setRole("none");
     }
 
     setSessionReady(true);
-  });
+  }
+
+  initializeAuth();
 
   const { data: subscription } = supabase.auth.onAuthStateChange(
     async (event, session) => {
-      if (event === "PASSWORD_RECOVERY") {
+      const recoveryInUrl =
+        window.location.hash.includes("type=recovery") ||
+        window.location.search.includes("type=recovery");
+
+      if (event === "PASSWORD_RECOVERY" || recoveryInUrl) {
         setRecoveryMode(true);
         setSessionReady(true);
         return;
@@ -148,8 +206,7 @@ const [newPassword, setNewPassword] = useState("");
     active = false;
     subscription.subscription.unsubscribe();
   };
-}, []);
-  async function resolveAccess(userId: string) {
+}, []);  async function resolveAccess(userId: string) {
     setRole("loading");
     setMessage("");
 
