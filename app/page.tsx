@@ -104,58 +104,55 @@ useEffect(() => {
         window.location.hash.replace(/^#/, "")
       );
 
-      const searchParams = new URLSearchParams(window.location.search);
+      const accessToken = hashParams.get("access_token");
+      const refreshToken = hashParams.get("refresh_token");
+      const type = hashParams.get("type");
 
-      const recoveryType =
-        hashParams.get("type") || searchParams.get("type");
-
-      const isRecovery =
-        recoveryType === "recovery" ||
-        window.location.hash.includes("type=recovery");
-
-      // Si Supabase nos envió desde un correo de recuperación,
-      // esperamos a que su cliente procese automáticamente la sesión.
-      if (isRecovery) {
-        setRecoveryMode(true);
-
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
+      // 1. Procesar explícitamente tokens enviados por Supabase
+      if (accessToken && refreshToken) {
+        const { data, error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
 
         if (!mounted) return;
 
-        if (session?.user) {
-          setSessionReady(true);
+        if (error) {
+          console.error("SET SESSION ERROR:", error);
           setRole("none");
+          setSessionReady(true);
+          setMessage(`No se pudo validar el enlace: ${error.message}`);
           return;
         }
 
-        // Damos un pequeño margen para que Supabase procese
-        // los tokens que vienen en el hash.
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        // Limpiar los tokens sensibles de la barra del navegador
+        window.history.replaceState(
+          {},
+          document.title,
+          window.location.pathname
+        );
 
-        const {
-          data: { session: recoverySession },
-        } = await supabase.auth.getSession();
-
-        if (!mounted) return;
-
-        if (recoverySession?.user) {
+        // Si es recuperación de contraseña
+        if (type === "recovery") {
           setRecoveryMode(true);
           setRole("none");
           setSessionReady(true);
           return;
         }
 
-        setMessage(
-          "No se pudo validar el enlace de recuperación. Solicita uno nuevo."
-        );
-        setRecoveryMode(true);
-        setRole("none");
-        setSessionReady(true);
-        return;
+        // Si es Magic Link u otro acceso válido
+        if (data.session?.user) {
+          await resolveAccess(data.session.user.id);
+
+          if (mounted) {
+            setSessionReady(true);
+          }
+
+          return;
+        }
       }
 
+      // 2. Revisar si ya existe una sesión guardada
       const {
         data: { session },
       } = await supabase.auth.getSession();
@@ -182,6 +179,8 @@ useEffect(() => {
     }
   }
 
+  initializeAuth();
+
   const {
     data: { subscription },
   } = supabase.auth.onAuthStateChange((event, session) => {
@@ -202,28 +201,24 @@ useEffect(() => {
       return;
     }
 
-    if (
-      event === "SIGNED_IN" &&
-      session?.user &&
-      !recoveryMode
-    ) {
-      // No esperamos resolveAccess dentro del callback de Supabase.
-      // Lo ejecutamos fuera del callback para evitar bloqueos.
+    if (event === "SIGNED_IN" && session?.user) {
       setTimeout(() => {
         resolveAccess(session.user.id).finally(() => {
-          if (mounted) setSessionReady(true);
+          if (mounted) {
+            setSessionReady(true);
+          }
         });
       }, 0);
     }
   });
 
-  initializeAuth();
-
   return () => {
     mounted = false;
     subscription.unsubscribe();
   };
-}, []);  async function resolveAccess(userId: string) {
+}, []); 
+  
+  async function resolveAccess(userId: string) {
     setRole("loading");
     setMessage("");
 
@@ -428,7 +423,7 @@ async function changePassword(e: React.FormEvent) {
     );
   }, [students, search]);
 
-  if (!sessionReady || role === "loading") {
+  if (!recoveryMode && (!sessionReady || role === "loading")) {
     return (
       <Centered>
         <Loader2 className="spin" size={28} />
