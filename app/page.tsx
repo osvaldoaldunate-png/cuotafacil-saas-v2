@@ -96,115 +96,132 @@ const [newPassword, setNewPassword] = useState("");
   const [search, setSearch] = useState("");
 
 useEffect(() => {
-  let active = true;
+  let mounted = true;
 
   async function initializeAuth() {
-    const url = new URL(window.location.href);
-    const hashParams = new URLSearchParams(
-      window.location.hash.replace(/^#/, "")
-    );
+    try {
+      const hashParams = new URLSearchParams(
+        window.location.hash.replace(/^#/, "")
+      );
 
-    const type =
-      url.searchParams.get("type") || hashParams.get("type");
+      const searchParams = new URLSearchParams(window.location.search);
 
-    const code = url.searchParams.get("code");
-    const accessToken = hashParams.get("access_token");
-    const refreshToken = hashParams.get("refresh_token");
+      const recoveryType =
+        hashParams.get("type") || searchParams.get("type");
 
-    const isRecovery = type === "recovery";
+      const isRecovery =
+        recoveryType === "recovery" ||
+        window.location.hash.includes("type=recovery");
 
-    if (isRecovery) {
-      setRecoveryMode(true);
-      setSessionReady(false);
+      // Si Supabase nos envió desde un correo de recuperación,
+      // esperamos a que su cliente procese automáticamente la sesión.
+      if (isRecovery) {
+        setRecoveryMode(true);
 
-      // Recuperación mediante PKCE (?code=...)
-      if (code) {
-        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
 
-        if (error) {
-          setMessage(`No se pudo validar el enlace: ${error.message}`);
+        if (!mounted) return;
+
+        if (session?.user) {
+          setSessionReady(true);
+          setRole("none");
+          return;
+        }
+
+        // Damos un pequeño margen para que Supabase procese
+        // los tokens que vienen en el hash.
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        const {
+          data: { session: recoverySession },
+        } = await supabase.auth.getSession();
+
+        if (!mounted) return;
+
+        if (recoverySession?.user) {
+          setRecoveryMode(true);
+          setRole("none");
           setSessionReady(true);
           return;
         }
-      }
 
-      // Recuperación mediante tokens en el hash (#access_token=...)
-      if (accessToken && refreshToken) {
-        const { error } = await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken,
-        });
-
-        if (error) {
-          setMessage(`No se pudo validar el enlace: ${error.message}`);
-          setSessionReady(true);
-          return;
-        }
+        setMessage(
+          "No se pudo validar el enlace de recuperación. Solicita uno nuevo."
+        );
+        setRecoveryMode(true);
+        setRole("none");
+        setSessionReady(true);
+        return;
       }
 
       const {
         data: { session },
       } = await supabase.auth.getSession();
 
-      if (!active) return;
-
-      if (session?.user) {
-        setRecoveryMode(true);
-        setSessionReady(true);
-        return;
-      }
-
-      setMessage(
-        "El enlace de recuperación no generó una sesión válida. Solicita un enlace nuevo."
-      );
-      setRecoveryMode(true);
-      setSessionReady(true);
-      return;
-    }
-
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-
-    if (!active) return;
-
-    if (session?.user) {
-      await resolveAccess(session.user.id);
-    } else {
-      setRole("none");
-    }
-
-    setSessionReady(true);
-  }
-
-  initializeAuth();
-
-  const { data: subscription } = supabase.auth.onAuthStateChange(
-    async (event, session) => {
-      const recoveryInUrl =
-        window.location.hash.includes("type=recovery") ||
-        window.location.search.includes("type=recovery");
-
-      if (event === "PASSWORD_RECOVERY" || recoveryInUrl) {
-        setRecoveryMode(true);
-        setSessionReady(true);
-        return;
-      }
+      if (!mounted) return;
 
       if (session?.user) {
         await resolveAccess(session.user.id);
       } else {
         setRole("none");
-        clearData();
       }
 
-      setSessionReady(true);
+      if (mounted) {
+        setSessionReady(true);
+      }
+    } catch (error) {
+      console.error("AUTH INITIALIZATION ERROR:", error);
+
+      if (mounted) {
+        setRole("none");
+        setSessionReady(true);
+        setMessage("No se pudo iniciar la sesión. Intenta nuevamente.");
+      }
     }
-  );
+  }
+
+  const {
+    data: { subscription },
+  } = supabase.auth.onAuthStateChange((event, session) => {
+    if (!mounted) return;
+
+    if (event === "PASSWORD_RECOVERY") {
+      setRecoveryMode(true);
+      setRole("none");
+      setSessionReady(true);
+      return;
+    }
+
+    if (event === "SIGNED_OUT") {
+      setRole("none");
+      setRecoveryMode(false);
+      clearData();
+      setSessionReady(true);
+      return;
+    }
+
+    if (
+      event === "SIGNED_IN" &&
+      session?.user &&
+      !recoveryMode
+    ) {
+      // No esperamos resolveAccess dentro del callback de Supabase.
+      // Lo ejecutamos fuera del callback para evitar bloqueos.
+      setTimeout(() => {
+        resolveAccess(session.user.id).finally(() => {
+          if (mounted) setSessionReady(true);
+        });
+      }, 0);
+    }
+  });
+
+  initializeAuth();
 
   return () => {
-    active = false;
-    subscription.subscription.unsubscribe();
+    mounted = false;
+    subscription.unsubscribe();
   };
 }, []);  async function resolveAccess(userId: string) {
     setRole("loading");
