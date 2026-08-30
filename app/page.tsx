@@ -223,16 +223,29 @@ useEffect(() => {
     setMessage("");
 
     const { data: adminData, error: adminError } = await supabase
-      .from("platform_admins")
-      .select("user_id")
-      .eq("user_id", userId)
-      .maybeSingle();
+  .from("platform_admins")
+  .select("user_id")
+  .eq("user_id", userId)
+  .maybeSingle();
 
-    if (!adminError && adminData) {
-      setRole("admin");
-      await loadMasterPanel();
-      return;
-    }
+console.log("CUOTAFACIL ACCESS DEBUG", {
+  authUserId: userId,
+  adminData,
+  adminError,
+});
+
+if (adminError) {
+  console.error("PLATFORM ADMIN ERROR:", adminError);
+  setRole("none");
+  setMessage(`Error verificando administrador: ${adminError.message}`);
+  return;
+}
+
+if (adminData) {
+  setRole("admin");
+  await loadMasterPanel();
+  return;
+}
 
     const { data: membershipData, error: membershipError } = await supabase
       .from("memberships")
