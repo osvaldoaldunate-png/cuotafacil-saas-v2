@@ -281,6 +281,34 @@ async function changePassword(e: React.FormEvent) {
   setRole("none");
   setAuthLoading(false);
 }
+  async function requestPasswordReset() {
+  setMessage("");
+
+  const cleanEmail = email.trim();
+
+  if (!cleanEmail) {
+    setMessage("Primero ingresa tu correo electrónico.");
+    return;
+  }
+
+  setAuthLoading(true);
+
+  const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
+    redirectTo: "https://cuotafacil-saas-v2.vercel.app",
+  });
+
+  if (error) {
+    console.error("PASSWORD RESET ERROR:", error);
+    setMessage(`No se pudo enviar el correo: ${error.message}`);
+    setAuthLoading(false);
+    return;
+  }
+
+  setMessage(
+    "Te enviamos un correo para crear una nueva contraseña. Revisa también Spam."
+  );
+  setAuthLoading(false);
+}
   async function signIn(e: React.FormEvent) {
   e.preventDefault();
   setAuthLoading(true);
@@ -486,6 +514,22 @@ if (recoveryMode) {
               )}
               Iniciar sesión
             </button>
+            <button
+  type="button"
+  onClick={requestPasswordReset}
+  disabled={authLoading}
+  style={{
+    border: "none",
+    background: "transparent",
+    color: "#5b4df7",
+    fontWeight: 700,
+    cursor: authLoading ? "not-allowed" : "pointer",
+    padding: "10px 0 2px",
+    fontSize: 14,
+  }}
+>
+  ¿Olvidaste tu contraseña?
+</button>
           </form>
 
           {message && <div style={styles.notice}>{message}</div>}
