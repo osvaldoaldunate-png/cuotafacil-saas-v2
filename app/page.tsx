@@ -796,6 +796,7 @@ if (recoveryMode) {
     </div>
   </section>
 )}
+      {module === "payments" && (
         <section style={styles.panel}>
           <h2 style={styles.sectionTitle}>Pagos registrados</h2>
 
@@ -1247,6 +1248,7 @@ if (recoveryMode) {
     </div>
   </section>
 )}
+      {module === "payments" && (
         <section style={styles.panel}>
           <h2 style={styles.sectionTitle}>Pagos registrados</h2>
           <p style={styles.muted}>
