@@ -1068,7 +1068,7 @@ if (recoveryMode) {
         </div>
       </header>
 
-      {module !== "home" && (
+      {module !== "home" && module !== "summary" && (
         <button
           style={styles.backButton}
           onClick={() => setModule("home")}
