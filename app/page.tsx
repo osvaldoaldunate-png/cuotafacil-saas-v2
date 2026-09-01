@@ -736,76 +736,66 @@ if (recoveryMode) {
   </section>
 )}
       {module === "students" && (
-        <section style={styles.panel}>
-          <div style={styles.panelHeader}>
-  <div>
-    <h2 style={styles.sectionTitle}>Alumnos</h2>
-    <p style={styles.muted}>
-      Información real almacenada en la tabla students.
-    </p>
-  </div>
-
-  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-    <button
-      style={styles.primaryButton}
-      onClick={() => setShowStudentForm(true)}
-    >
-      + Agregar alumno
-    </button>
-
-    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-  <button
-    style={styles.primaryButton}
-    onClick={() => setShowStudentForm(true)}
-  >
-    + Agregar alumno
-  </button>
-
-  <div style={styles.searchBox}>
-    <Search size={18} />
-    <input
-      style={styles.searchInput}
-      placeholder="Buscar alumno, apoderado o curso..."
-      value={search}
-      onChange={(e) => setSearch(e.target.value)}
-    />
+  <section style={styles.panel}>
+    <div style={styles.panelHeader}>
+      <div>
+        <h2 style={styles.sectionTitle}>Alumnos</h2>
+        <p style={styles.muted}>
+          Información real almacenada en la tabla students.
+        </p>
       </div>
-  </div>
-</div>
 
-<div style={styles.tableWrap}>
-            <table style={styles.table}>
-              <thead>
-                <tr>
-                  <th style={styles.th}>Alumno</th>
-                  <th style={styles.th}>Apoderado</th>
-                  <th style={styles.th}>Teléfono</th>
-                  <th style={styles.th}>Curso</th>
-                  <th style={styles.th}>Monto</th>
-                </tr>
-              </thead>
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+        <button
+          style={styles.primaryButton}
+          onClick={() => setShowStudentForm(true)}
+        >
+          + Agregar alumno
+        </button>
 
-              <tbody>
-                {filteredStudents.map((student) => (
-                  <tr key={student.id}>
-                    <td style={styles.td}>
-                      <strong>{student.student}</strong>
-                    </td>
-                    <td style={styles.td}>{student.guardian || "—"}</td>
-                    <td style={styles.td}>{student.phone || "—"}</td>
-                    <td style={styles.td}>{student.course || "—"}</td>
-                    <td style={styles.td}>
-                      {money(Number(student.amount || 0))}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      )}
+        <div style={styles.searchBox}>
+          <Search size={18} />
+          <input
+            style={styles.searchInput}
+            placeholder="Buscar alumno, apoderado o curso..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+      </div>
+    </div>
 
-      {module === "payments" && (
+    <div style={styles.tableWrap}>
+      <table style={styles.table}>
+        <thead>
+          <tr>
+            <th style={styles.th}>Alumno</th>
+            <th style={styles.th}>Apoderado</th>
+            <th style={styles.th}>Teléfono</th>
+            <th style={styles.th}>Curso</th>
+            <th style={styles.th}>Monto</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {filteredStudents.map((student) => (
+            <tr key={student.id}>
+              <td style={styles.td}>
+                <strong>{student.student}</strong>
+              </td>
+              <td style={styles.td}>{student.guardian || "—"}</td>
+              <td style={styles.td}>{student.phone || "—"}</td>
+              <td style={styles.td}>{student.course || "—"}</td>
+              <td style={styles.td}>
+                {money(Number(student.amount || 0))}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </section>
+)}
         <section style={styles.panel}>
           <h2 style={styles.sectionTitle}>Pagos registrados</h2>
 
@@ -1197,66 +1187,66 @@ if (recoveryMode) {
   </section>
 )}
       {module === "students" && (
-        <section style={styles.panel}>
-          <div style={styles.panelHeader}>
-  <div>
-    <h2 style={styles.sectionTitle}>Alumnos</h2>
-    <p style={styles.muted}>
-      Información real almacenada en la tabla students.
-    </p>
-  </div>
+  <section style={styles.panel}>
+    <div style={styles.panelHeader}>
+      <div>
+        <h2 style={styles.sectionTitle}>Alumnos</h2>
+        <p style={styles.muted}>
+          Información real almacenada en la tabla students.
+        </p>
+      </div>
 
-  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-    <button
-      style={styles.primaryButton}
-      onClick={() => setShowStudentForm(true)}
-    >
-      + Agregar alumno
-    </button>
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+        <button
+          style={styles.primaryButton}
+          onClick={() => setShowStudentForm(true)}
+        >
+          + Agregar alumno
+        </button>
 
-    <div style={styles.searchBox}>
-      <Search size={18} />
-      <input
-        style={styles.searchInput}
-        placeholder="Buscar alumno, apoderado o curso..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-      />
+        <div style={styles.searchBox}>
+          <Search size={18} />
+          <input
+            style={styles.searchInput}
+            placeholder="Buscar alumno, apoderado o curso..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+      </div>
     </div>
-  </div>
-          </div>  
-          
-</div>        <table style={styles.table}>
-              <thead>
-                <tr>
-                  <th style={styles.th}>Alumno</th>
-                  <th style={styles.th}>Apoderado</th>
-                  <th style={styles.th}>Teléfono</th>
-                  <th style={styles.th}>Curso</th>
-                  <th style={styles.th}>Monto</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredStudents.map((student) => (
-                  <tr key={student.id}>
-                    <td style={styles.td}>
-                      <strong>{student.student}</strong>
-                    </td>
-                    <td style={styles.td}>{student.guardian || "—"}</td>
-                    <td style={styles.td}>{student.phone || "—"}</td>
-                    <td style={styles.td}>{student.course || "—"}</td>
-                    <td style={styles.td}>
-                      {money(Number(student.amount || 0))}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      )}
 
-      {module === "payments" && (
+    <div style={styles.tableWrap}>
+      <table style={styles.table}>
+        <thead>
+          <tr>
+            <th style={styles.th}>Alumno</th>
+            <th style={styles.th}>Apoderado</th>
+            <th style={styles.th}>Teléfono</th>
+            <th style={styles.th}>Curso</th>
+            <th style={styles.th}>Monto</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {filteredStudents.map((student) => (
+            <tr key={student.id}>
+              <td style={styles.td}>
+                <strong>{student.student}</strong>
+              </td>
+              <td style={styles.td}>{student.guardian || "—"}</td>
+              <td style={styles.td}>{student.phone || "—"}</td>
+              <td style={styles.td}>{student.course || "—"}</td>
+              <td style={styles.td}>
+                {money(Number(student.amount || 0))}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </section>
+)}
         <section style={styles.panel}>
           <h2 style={styles.sectionTitle}>Pagos registrados</h2>
           <p style={styles.muted}>
