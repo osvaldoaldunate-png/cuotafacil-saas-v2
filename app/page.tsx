@@ -769,10 +769,11 @@ if (recoveryMode) {
       value={search}
       onChange={(e) => setSearch(e.target.value)}
     />
+      </div>
   </div>
 </div>
 
-          <div style={styles.tableWrap}>
+<div style={styles.tableWrap}>
             <table style={styles.table}>
               <thead>
                 <tr>
