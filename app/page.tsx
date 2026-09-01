@@ -1199,26 +1199,34 @@ if (recoveryMode) {
       {module === "students" && (
         <section style={styles.panel}>
           <div style={styles.panelHeader}>
-            <div>
-              <h2 style={styles.sectionTitle}>Alumnos</h2>
-              <p style={styles.muted}>
-                Información real almacenada en la tabla students.
-              </p>
-            </div>
+  <div>
+    <h2 style={styles.sectionTitle}>Alumnos</h2>
+    <p style={styles.muted}>
+      Información real almacenada en la tabla students.
+    </p>
+  </div>
 
-            <div style={styles.searchBox}>
-              <Search size={18} />
-              <input
-                style={styles.searchInput}
-                placeholder="Buscar alumno, apoderado o curso..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
-          </div>
+  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+    <button
+      style={styles.primaryButton}
+      onClick={() => setShowStudentForm(true)}
+    >
+      + Agregar alumno
+    </button>
 
-          <div style={styles.tableWrap}>
-            <table style={styles.table}>
+    <div style={styles.searchBox}>
+      <Search size={18} />
+      <input
+        style={styles.searchInput}
+        placeholder="Buscar alumno, apoderado o curso..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
+    </div>
+  </div>
+          </div>  
+          
+</div>        <table style={styles.table}>
               <thead>
                 <tr>
                   <th style={styles.th}>Alumno</th>
