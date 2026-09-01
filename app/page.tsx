@@ -569,6 +569,302 @@ if (recoveryMode) {
     );
   }
 
+  if (role === "admin" && adminOrganizationView) {
+  return (
+    <main style={styles.app}>
+      <header style={styles.header}>
+        <div>
+          <p style={styles.eyebrow}>ADMINISTRACIÓN DE ORGANIZACIÓN</p>
+
+          <h1 style={styles.title}>
+            {organization?.name || "Escuela Blanca Nieves"}
+          </h1>
+
+          <p style={styles.muted}>
+            Vista administrativa desde el Panel Maestro de CuotaFácil.
+          </p>
+        </div>
+
+        <div style={styles.headerActions}>
+          <button
+            style={styles.secondaryButton}
+            onClick={() => {
+              setAdminOrganizationView(false);
+              setOrganization(null);
+              setModule("home");
+            }}
+          >
+            <ArrowLeft size={17} />
+            Volver al Panel Maestro
+          </button>
+
+          <button
+            style={styles.secondaryButton}
+            onClick={() => loadBlancaNieves()}
+          >
+            <RefreshCw size={17} />
+            Actualizar
+          </button>
+
+          <button style={styles.secondaryButton} onClick={logout}>
+            <LogOut size={17} />
+            Salir
+          </button>
+        </div>
+      </header>
+
+      {module !== "home" && (
+        <button
+          style={styles.backButton}
+          onClick={() => setModule("home")}
+        >
+          <ArrowLeft size={18} />
+          Volver al resumen
+        </button>
+      )}
+
+      {module === "home" && (
+        <>
+          <section style={styles.metricGrid}>
+            <MetricCard
+              icon={<Users />}
+              label="Alumnos"
+              value={String(students.length)}
+            />
+
+            <MetricCard
+              icon={<CheckCircle2 />}
+              label="Pagos registrados"
+              value={String(paidCount)}
+            />
+
+            <MetricCard
+              icon={<ReceiptText />}
+              label="Comprobantes"
+              value={String(submissions.length)}
+            />
+
+            <MetricCard
+              icon={<CircleDollarSign />}
+              label="Monto mensual base"
+              value={money(totalExpected)}
+            />
+          </section>
+
+          <section style={styles.panel}>
+            <h2 style={styles.sectionTitle}>Gestión de Blanca Nieves</h2>
+
+            <p style={styles.muted}>
+              Selecciona el módulo que deseas administrar.
+            </p>
+
+            <div style={styles.moduleGrid}>
+              <ModuleButton
+                icon={<Users />}
+                title="Alumnos"
+                text={`${students.length} registros`}
+                onClick={() => setModule("students")}
+              />
+
+              <ModuleButton
+                icon={<WalletCards />}
+                title="Pagos"
+                text={`${paidCount} pagos registrados`}
+                onClick={() => setModule("payments")}
+              />
+
+              <ModuleButton
+                icon={<ReceiptText />}
+                title="Comprobantes"
+                text={`${submissions.length} solicitudes`}
+                onClick={() => setModule("submissions")}
+              />
+
+              <ModuleButton
+                icon={<LayoutDashboard />}
+                title="Resumen"
+                text={`${approvedSubmissions} aprobados`}
+                onClick={() => setModule("home")}
+              />
+            </div>
+          </section>
+        </>
+      )}
+
+      {module === "students" && (
+        <section style={styles.panel}>
+          <div style={styles.panelHeader}>
+            <div>
+              <h2 style={styles.sectionTitle}>Alumnos</h2>
+              <p style={styles.muted}>
+                Información real almacenada en la tabla students.
+              </p>
+            </div>
+
+            <div style={styles.searchBox}>
+              <Search size={18} />
+              <input
+                style={styles.searchInput}
+                placeholder="Buscar alumno, apoderado o curso..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div style={styles.tableWrap}>
+            <table style={styles.table}>
+              <thead>
+                <tr>
+                  <th style={styles.th}>Alumno</th>
+                  <th style={styles.th}>Apoderado</th>
+                  <th style={styles.th}>Teléfono</th>
+                  <th style={styles.th}>Curso</th>
+                  <th style={styles.th}>Monto</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {filteredStudents.map((student) => (
+                  <tr key={student.id}>
+                    <td style={styles.td}>
+                      <strong>{student.student}</strong>
+                    </td>
+                    <td style={styles.td}>{student.guardian || "—"}</td>
+                    <td style={styles.td}>{student.phone || "—"}</td>
+                    <td style={styles.td}>{student.course || "—"}</td>
+                    <td style={styles.td}>
+                      {money(Number(student.amount || 0))}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      {module === "payments" && (
+        <section style={styles.panel}>
+          <h2 style={styles.sectionTitle}>Pagos registrados</h2>
+
+          <p style={styles.muted}>
+            Mensualidades almacenadas en la tabla payments.
+          </p>
+
+          <div style={{ ...styles.tableWrap, marginTop: 18 }}>
+            <table style={styles.table}>
+              <thead>
+                <tr>
+                  <th style={styles.th}>Alumno</th>
+                  <th style={styles.th}>Año</th>
+                  <th style={styles.th}>Mes</th>
+                  <th style={styles.th}>Estado</th>
+                  <th style={styles.th}>Fecha pago</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {payments.map((payment) => {
+                  const student = students.find(
+                    (s) => s.id === payment.student_id
+                  );
+
+                  return (
+                    <tr key={payment.id}>
+                      <td style={styles.td}>
+                        {student?.student || `Alumno #${payment.student_id}`}
+                      </td>
+                      <td style={styles.td}>{payment.year}</td>
+                      <td style={styles.td}>{payment.month}</td>
+                      <td style={styles.td}>
+                        <span
+                          style={
+                            payment.paid
+                              ? styles.approvedChip
+                              : styles.pendingChip
+                          }
+                        >
+                          {payment.paid ? "Pagado" : "Pendiente"}
+                        </span>
+                      </td>
+                      <td style={styles.td}>
+                        {payment.paid_date || "—"}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      {module === "submissions" && (
+        <section style={styles.panel}>
+          <h2 style={styles.sectionTitle}>Comprobantes enviados</h2>
+
+          <p style={styles.muted}>
+            Solicitudes almacenadas en payment_submissions.
+          </p>
+
+          <div style={{ ...styles.tableWrap, marginTop: 18 }}>
+            <table style={styles.table}>
+              <thead>
+                <tr>
+                  <th style={styles.th}>Alumno</th>
+                  <th style={styles.th}>Año</th>
+                  <th style={styles.th}>Meses</th>
+                  <th style={styles.th}>Monto</th>
+                  <th style={styles.th}>Estado</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {submissions.map((submission) => {
+                  const student = students.find(
+                    (s) => s.id === submission.student_id
+                  );
+
+                  return (
+                    <tr key={submission.id}>
+                      <td style={styles.td}>
+                        {student?.student ||
+                          `Alumno #${submission.student_id}`}
+                      </td>
+                      <td style={styles.td}>{submission.year}</td>
+                      <td style={styles.td}>
+                        {Array.isArray(submission.months)
+                          ? submission.months.join(", ")
+                          : String(submission.months || "—")
+                              .replaceAll("[", "")
+                              .replaceAll("]", "")
+                              .replaceAll('"', "")}
+                      </td>
+                      <td style={styles.td}>
+                        {money(Number(submission.amount || 0))}
+                      </td>
+                      <td style={styles.td}>
+                        <StatusChip status={submission.status || "pending"} />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      {loadingData && (
+        <div style={styles.loadingOverlay}>
+          <Loader2 className="spin" />
+          Actualizando información...
+        </div>
+      )}
+    </main>
+  );
+}
   if (role === "admin") {
     return (
       <main style={styles.app}>
