@@ -618,15 +618,15 @@ if (recoveryMode) {
         </div>
       </header>
 
-      {module !== "home" && (
-        <button
-          style={styles.backButton}
-          onClick={() => setModule("summary")}
-        >
-          <ArrowLeft size={18} />
-          Volver al resumen
-        </button>
-      )}
+      {module !== "home" && module !== "summary" && (
+  <button
+    style={styles.backButton}
+    onClick={() => setModule("home")}
+  >
+    <ArrowLeft size={18} />
+    Volver al resumen
+  </button>
+)}
 
       {module === "home" && (
         <>
@@ -1129,16 +1129,46 @@ if (recoveryMode) {
                 onClick={() => setModule("submissions")}
               />
               <ModuleButton
-                icon={<LayoutDashboard />}
-                title="Resumen"
-                text={`${approvedSubmissions} aprobados`}
-                onClick={() => setModule("home")}
-              />
+  icon={<LayoutDashboard />}
+  title="Resumen"
+  text={`${approvedSubmissions} aprobados`}
+  onClick={() => setModule("summary")}
+/>
             </div>
           </section>
         </>
       )}
 
+      {module === "summary" && (
+  <section style={styles.panel}>
+    <h2 style={styles.sectionTitle}>Resumen general</h2>
+
+    <p style={styles.muted}>
+      Estado general de la organización.
+    </p>
+
+    <div style={{ ...styles.metricGrid, marginTop: 20 }}>
+      <SmallMetric label="Alumnos" value={String(students.length)} />
+      <SmallMetric label="Pagos registrados" value={String(paidCount)} />
+      <SmallMetric
+        label="Comprobantes aprobados"
+        value={String(approvedSubmissions)}
+      />
+      <SmallMetric
+        label="Comprobantes pendientes"
+        value={String(pendingSubmissions)}
+      />
+      <SmallMetric
+        label="Monto mensual base"
+        value={money(totalExpected)}
+      />
+      <SmallMetric
+        label="Comprobantes totales"
+        value={String(submissions.length)}
+      />
+    </div>
+  </section>
+)}
       {module === "students" && (
         <section style={styles.panel}>
           <div style={styles.panelHeader}>
