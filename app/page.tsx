@@ -93,6 +93,7 @@ const [newPassword, setNewPassword] = useState("");
 
   const [loadingData, setLoadingData] = useState(false);
   const [module, setModule] = useState<ClientModule>("home");
+  const [adminOrganizationView, setAdminOrganizationView] = useState(false);
   const [search, setSearch] = useState("");
 
 useEffect(() => {
