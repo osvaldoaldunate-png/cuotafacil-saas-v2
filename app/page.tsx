@@ -417,7 +417,47 @@ async function changePassword(e: React.FormEvent) {
 
     if (showLoader) setLoadingData(false);
   }
+async function saveStudent() {
+  if (!studentForm.student.trim()) {
+    setMessage("Debes ingresar el nombre del alumno.");
+    return;
+  }
 
+  setLoadingData(true);
+  setMessage("");
+
+  const { error } = await supabase.from("students").insert({
+    student: studentForm.student.trim(),
+    guardian: studentForm.guardian.trim() || null,
+    phone: studentForm.phone.trim() || null,
+    course: studentForm.course.trim() || null,
+    amount: studentForm.amount ? Number(studentForm.amount) : 0,
+    notes: studentForm.notes.trim() || null,
+  });
+
+  if (error) {
+    console.error("SAVE STUDENT ERROR:", error);
+    setMessage(`No se pudo guardar el alumno: ${error.message}`);
+    setLoadingData(false);
+    return;
+  }
+
+  setStudentForm({
+    student: "",
+    guardian: "",
+    phone: "",
+    course: "",
+    amount: "",
+    notes: "",
+  });
+
+  setShowStudentForm(false);
+
+  await loadBlancaNieves(false);
+
+  setMessage("Alumno agregado correctamente.");
+  setLoadingData(false);
+}
   const totalExpected = useMemo(
     () => students.reduce((sum, s) => sum + Number(s.amount || 0), 0),
     [students]
