@@ -663,15 +663,19 @@ if (recoveryMode) {
                   )}
 
                   <button
-                    style={styles.openButton}
-                    onClick={() =>
-                      alert(
-                        "La gestión detallada de esta organización será el siguiente módulo."
-                      )
-                    }
-                  >
-                    Ver organización →
-                  </button>
+  style={styles.openButton}
+  onClick={() => {
+    setOrganization(org);
+    setModule("home");
+    setAdminOrganizationView(true);
+
+    if (org.slug === "blanca-nieves") {
+      loadBlancaNieves();
+    }
+  }}
+>
+  Ver organización →
+</button>
                 </article>
               ))}
 
