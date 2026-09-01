@@ -771,7 +771,6 @@ if (recoveryMode) {
     />
   </div>
 </div>
-          </div>
 
           <div style={styles.tableWrap}>
             <table style={styles.table}>
