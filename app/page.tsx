@@ -100,6 +100,16 @@ const [newPassword, setNewPassword] = useState("");
   const [module, setModule] = useState<ClientModule>("home");
   const [adminOrganizationView, setAdminOrganizationView] = useState(false);
   const [search, setSearch] = useState("");
+  const [showStudentForm, setShowStudentForm] = useState(false);
+
+const [studentForm, setStudentForm] = useState({
+  student: "",
+  guardian: "",
+  phone: "",
+  course: "",
+  amount: "",
+  notes: "",
+});
 
 useEffect(() => {
   let mounted = true;
