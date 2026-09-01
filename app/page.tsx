@@ -738,14 +738,22 @@ if (recoveryMode) {
       {module === "students" && (
         <section style={styles.panel}>
           <div style={styles.panelHeader}>
-            <div>
-              <h2 style={styles.sectionTitle}>Alumnos</h2>
-              <p style={styles.muted}>
-                Información real almacenada en la tabla students.
-              </p>
-            </div>
+  <div>
+    <h2 style={styles.sectionTitle}>Alumnos</h2>
+    <p style={styles.muted}>
+      Información real almacenada en la tabla students.
+    </p>
+  </div>
 
-            <div style={styles.searchBox}>
+  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+    <button
+      style={styles.primaryButton}
+      onClick={() => setShowStudentForm(true)}
+    >
+      + Agregar alumno
+    </button>
+
+    <div style={styles.searchBox}>
               <Search size={18} />
               <input
                 style={styles.searchInput}
