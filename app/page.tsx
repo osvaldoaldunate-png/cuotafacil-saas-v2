@@ -22,7 +22,12 @@ import {
 } from "lucide-react";
 
 type Role = "loading" | "admin" | "client" | "none";
-type ClientModule = "home" | "students" | "payments" | "submissions";
+type ClientModule =
+  | "home"
+  | "students"
+  | "payments"
+  | "submissions"
+  | "summary";
 
 type Organization = {
   id: string;
@@ -616,7 +621,7 @@ if (recoveryMode) {
       {module !== "home" && (
         <button
           style={styles.backButton}
-          onClick={() => setModule("home")}
+          onClick={() => setModule("summary")}
         >
           <ArrowLeft size={18} />
           Volver al resumen
@@ -684,13 +689,42 @@ if (recoveryMode) {
                 icon={<LayoutDashboard />}
                 title="Resumen"
                 text={`${approvedSubmissions} aprobados`}
-                onClick={() => setModule("home")}
+                onClick={() => setModule("summary")}
               />
             </div>
           </section>
         </>
       )}
 
+      {module === "summary" && (
+  <section style={styles.panel}>
+    <h2 style={styles.sectionTitle}>Resumen general</h2>
+    <p style={styles.muted}>
+      Estado general de la organización.
+    </p>
+
+    <div style={{ ...styles.metricGrid, marginTop: 20 }}>
+      <SmallMetric label="Alumnos" value={String(students.length)} />
+      <SmallMetric label="Pagos registrados" value={String(paidCount)} />
+      <SmallMetric
+        label="Comprobantes aprobados"
+        value={String(approvedSubmissions)}
+      />
+      <SmallMetric
+        label="Comprobantes pendientes"
+        value={String(pendingSubmissions)}
+      />
+      <SmallMetric
+        label="Monto mensual base"
+        value={money(totalExpected)}
+      />
+      <SmallMetric
+        label="Comprobantes totales"
+        value={String(submissions.length)}
+      />
+    </div>
+  </section>
+)}
       {module === "students" && (
         <section style={styles.panel}>
           <div style={styles.panelHeader}>
