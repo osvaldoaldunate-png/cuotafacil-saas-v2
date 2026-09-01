@@ -764,7 +764,145 @@ if (recoveryMode) {
         </div>
       </div>
     </div>
+{showStudentForm && (
+  <div
+    style={{
+      marginTop: 20,
+      marginBottom: 20,
+      padding: 20,
+      border: "1px solid #e4e7ec",
+      borderRadius: 16,
+      background: "#f9fafb",
+    }}
+  >
+    <h3 style={{ marginTop: 0, marginBottom: 16 }}>
+      Nuevo alumno
+    </h3>
 
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))",
+        gap: 14,
+      }}
+    >
+      <label style={styles.label}>
+        Nombre del alumno
+        <input
+          style={styles.input}
+          value={studentForm.student}
+          onChange={(e) =>
+            setStudentForm({
+              ...studentForm,
+              student: e.target.value,
+            })
+          }
+          placeholder="Nombre completo"
+        />
+      </label>
+
+      <label style={styles.label}>
+        Apoderado
+        <input
+          style={styles.input}
+          value={studentForm.guardian}
+          onChange={(e) =>
+            setStudentForm({
+              ...studentForm,
+              guardian: e.target.value,
+            })
+          }
+          placeholder="Nombre del apoderado"
+        />
+      </label>
+
+      <label style={styles.label}>
+        Teléfono
+        <input
+          style={styles.input}
+          value={studentForm.phone}
+          onChange={(e) =>
+            setStudentForm({
+              ...studentForm,
+              phone: e.target.value,
+            })
+          }
+          placeholder="+56 9..."
+        />
+      </label>
+
+      <label style={styles.label}>
+        Curso
+        <input
+          style={styles.input}
+          value={studentForm.course}
+          onChange={(e) =>
+            setStudentForm({
+              ...studentForm,
+              course: e.target.value,
+            })
+          }
+          placeholder="Ej: Medio Mayor A"
+        />
+      </label>
+
+      <label style={styles.label}>
+        Monto mensual
+        <input
+          style={styles.input}
+          type="number"
+          value={studentForm.amount}
+          onChange={(e) =>
+            setStudentForm({
+              ...studentForm,
+              amount: e.target.value,
+            })
+          }
+          placeholder="Ej: 25000"
+        />
+      </label>
+
+      <label style={styles.label}>
+        Observaciones
+        <input
+          style={styles.input}
+          value={studentForm.notes}
+          onChange={(e) =>
+            setStudentForm({
+              ...studentForm,
+              notes: e.target.value,
+            })
+          }
+          placeholder="Opcional"
+        />
+      </label>
+    </div>
+
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "flex-end",
+        gap: 10,
+        marginTop: 18,
+      }}
+    >
+      <button
+        type="button"
+        style={styles.secondaryButton}
+        onClick={() => setShowStudentForm(false)}
+      >
+        Cancelar
+      </button>
+
+      <button
+        type="button"
+        style={styles.primaryButton}
+      >
+        Guardar alumno
+      </button>
+    </div>
+  </div>
+)}
     <div style={styles.tableWrap}>
       <table style={styles.table}>
         <thead>
