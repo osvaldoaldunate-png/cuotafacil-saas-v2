@@ -753,15 +753,24 @@ if (recoveryMode) {
       + Agregar alumno
     </button>
 
-    <div style={styles.searchBox}>
-              <Search size={18} />
-              <input
-                style={styles.searchInput}
-                placeholder="Buscar alumno, apoderado o curso..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
+    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+  <button
+    style={styles.primaryButton}
+    onClick={() => setShowStudentForm(true)}
+  >
+    + Agregar alumno
+  </button>
+
+  <div style={styles.searchBox}>
+    <Search size={18} />
+    <input
+      style={styles.searchInput}
+      placeholder="Buscar alumno, apoderado o curso..."
+      value={search}
+      onChange={(e) => setSearch(e.target.value)}
+    />
+  </div>
+</div>
           </div>
 
           <div style={styles.tableWrap}>
