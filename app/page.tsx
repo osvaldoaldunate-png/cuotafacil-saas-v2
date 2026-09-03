@@ -937,6 +937,7 @@ if (recoveryMode) {
       <button
         type="button"
         style={styles.primaryButton}
+        onClick={saveStudent}
       >
         Guardar alumno
       </button>
