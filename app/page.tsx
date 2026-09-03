@@ -101,6 +101,7 @@ const [newPassword, setNewPassword] = useState("");
   const [adminOrganizationView, setAdminOrganizationView] = useState(false);
   const [search, setSearch] = useState("");
   const [showStudentForm, setShowStudentForm] = useState(false);
+  const [editingStudentId, setEditingStudentId] = useState<number | null>(null);
 
 const [studentForm, setStudentForm] = useState({
   student: "",
