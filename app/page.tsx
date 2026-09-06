@@ -954,6 +954,7 @@ if (recoveryMode) {
             <th style={styles.th}>Teléfono</th>
             <th style={styles.th}>Curso</th>
             <th style={styles.th}>Monto</th>
+            <th style={styles.th}>Acciones</th>
           </tr>
         </thead>
 
@@ -969,6 +970,28 @@ if (recoveryMode) {
               <td style={styles.td}>
                 {money(Number(student.amount || 0))}
               </td>
+              <td style={styles.td}>
+  <button
+    type="button"
+    style={styles.secondaryButton}
+    onClick={() => {
+      setEditingStudentId(student.id);
+
+      setStudentForm({
+        student: student.student || "",
+        guardian: student.guardian || "",
+        phone: student.phone || "",
+        course: student.course || "",
+        amount: String(student.amount || ""),
+        notes: student.notes || "",
+      });
+
+      setShowStudentForm(true);
+    }}
+  >
+    Editar
+  </button>
+</td>
             </tr>
           ))}
         </tbody>
