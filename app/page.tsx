@@ -831,9 +831,9 @@ if (recoveryMode) {
       background: "#f9fafb",
     }}
   >
-    <h3 style={{ marginTop: 0, marginBottom: 16 }}>
-      Nuevo alumno
-    </h3>
+   <h3 style={{ marginTop: 0, marginBottom: 16 }}>
+  {editingStudentId !== null ? "Editar alumno" : "Nuevo alumno"}
+</h3>
 
     <div
       style={{
@@ -955,7 +955,7 @@ if (recoveryMode) {
         style={styles.primaryButton}
         onClick={saveStudent}
       >
-        Guardar alumno
+       {editingStudentId !== null ? "Guardar cambios" : "Guardar alumno"}
       </button>
     </div>
   </div>
