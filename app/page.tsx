@@ -427,14 +427,29 @@ async function saveStudent() {
   setLoadingData(true);
   setMessage("");
 
-  const { error } = await supabase.from("students").insert({
-    student: studentForm.student.trim(),
-    guardian: studentForm.guardian.trim() || null,
-    phone: studentForm.phone.trim() || null,
-    course: studentForm.course.trim() || null,
-    amount: studentForm.amount ? Number(studentForm.amount) : 0,
-    notes: studentForm.notes.trim() || null,
-  });
+  const studentData = {
+  student: studentForm.student.trim(),
+  guardian: studentForm.guardian.trim() || null,
+  phone: studentForm.phone.trim() || null,
+  course: studentForm.course.trim() || null,
+  amount: studentForm.amount ? Number(studentForm.amount) : 0,
+  notes: studentForm.notes.trim() || null,
+};
+
+let result;
+
+if (editingStudentId !== null) {
+  result = await supabase
+    .from("students")
+    .update(studentData)
+    .eq("id", editingStudentId);
+} else {
+  result = await supabase
+    .from("students")
+    .insert(studentData);
+}
+
+const { error } = result;
 
   if (error) {
     console.error("SAVE STUDENT ERROR:", error);
@@ -451,7 +466,7 @@ async function saveStudent() {
     amount: "",
     notes: "",
   });
-
+setEditingStudentId(null);
   setShowStudentForm(false);
 
   await loadBlancaNieves(false);
