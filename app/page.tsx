@@ -392,7 +392,7 @@ async function changePassword(e: React.FormEvent) {
 
     const { data } = await supabase
       .from("organizations")
-      .select("id,name,slug")
+      .select("id,name,slug,logo_url")
       .order("name");
 
     setOrganizations((data || []) as Organization[]);
