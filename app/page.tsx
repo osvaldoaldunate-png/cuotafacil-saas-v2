@@ -1046,6 +1046,18 @@ if (recoveryMode) {
   >
     Editar
   </button>
+                <button
+  type="button"
+  style={{
+    ...styles.secondaryButton,
+    color: "#b42318",
+    borderColor: "#fda29b",
+    marginLeft: 8,
+  }}
+  onClick={() => deleteStudent(student.id, student.student)}
+>
+  Eliminar
+</button>
 </td>
             </tr>
           ))}
