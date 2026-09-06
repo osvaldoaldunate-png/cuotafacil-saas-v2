@@ -1195,117 +1195,367 @@ if (recoveryMode) {
   );
 }
   if (role === "admin") {
-    return (
-      <main style={styles.app}>
-        <header style={styles.header}>
+  return (
+    <main
+      style={{
+        ...styles.app,
+        background:
+          "linear-gradient(180deg,#f8f9ff 0%,#f5f7fb 45%,#f5f7fb 100%)",
+      }}
+    >
+      <section
+        style={{
+          maxWidth: 1450,
+          margin: "0 auto 24px",
+          padding: "28px",
+          borderRadius: 24,
+          background:
+            "linear-gradient(135deg,#312e81 0%,#4f46e5 55%,#7c3aed 100%)",
+          color: "#fff",
+          boxShadow: "0 18px 50px rgba(79,70,229,.22)",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 20,
+            flexWrap: "wrap",
+          }}
+        >
           <div>
-            <p style={styles.eyebrow}>PANEL MAESTRO · CUOTAFÁCIL</p>
-            <h1 style={styles.title}>Tu plataforma, todos tus clientes.</h1>
-            <p style={styles.muted}>
-              Administración general de organizaciones y operaciones.
+            <p
+              style={{
+                margin: "0 0 8px",
+                fontSize: 12,
+                fontWeight: 800,
+                letterSpacing: "0.16em",
+                opacity: 0.8,
+              }}
+            >
+              CUOTAFÁCIL · PANEL MAESTRO
+            </p>
+
+            <h1
+              style={{
+                margin: "0 0 8px",
+                fontSize: 38,
+                letterSpacing: "-0.04em",
+              }}
+            >
+              Gestiona todos tus clientes.
+            </h1>
+
+            <p
+              style={{
+                margin: 0,
+                maxWidth: 650,
+                lineHeight: 1.6,
+                opacity: 0.85,
+              }}
+            >
+              Crea, personaliza y administra organizaciones desde una sola
+              plataforma.
             </p>
           </div>
 
-          <div style={styles.headerActions}>
-            <button style={styles.secondaryButton} onClick={loadMasterPanel}>
+          <div
+            style={{
+              display: "flex",
+              gap: 10,
+              flexWrap: "wrap",
+            }}
+          >
+            <button
+              onClick={() => setShowOrganizationForm(true)}
+              style={{
+                ...styles.primaryButton,
+                background: "#fff",
+                color: "#4338ca",
+                boxShadow: "0 8px 20px rgba(0,0,0,.10)",
+              }}
+            >
+              + Nueva organización
+            </button>
+
+            <button
+              onClick={loadMasterPanel}
+              style={{
+                ...styles.secondaryButton,
+                background: "rgba(255,255,255,.12)",
+                color: "#fff",
+                borderColor: "rgba(255,255,255,.25)",
+              }}
+            >
               <RefreshCw size={17} />
               Actualizar
             </button>
 
-            <button style={styles.secondaryButton} onClick={logout}>
+            <button
+              onClick={logout}
+              style={{
+                ...styles.secondaryButton,
+                background: "rgba(255,255,255,.12)",
+                color: "#fff",
+                borderColor: "rgba(255,255,255,.25)",
+              }}
+            >
               <LogOut size={17} />
               Salir
             </button>
           </div>
-        </header>
+        </div>
+      </section>
 
-        <section style={styles.metricGrid}>
-          <MetricCard
-            icon={<Building2 />}
-            label="Organizaciones"
-            value={String(organizations.length)}
-          />
-        </section>
-
-        <section style={styles.panel}>
-          <div style={styles.panelHeader}>
-            <div>
-              <h2 style={styles.sectionTitle}>Organizaciones</h2>
-              <p style={styles.muted}>
-                Clientes vinculados actualmente a CuotaFácil.
-              </p>
-            </div>
-            <button
-  style={styles.primaryButton}
-  onClick={() => setShowOrganizationForm(true)}
->
-  + Nueva organización
-</button>
+      <section
+        style={{
+          maxWidth: 1450,
+          margin: "0 auto 22px",
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit,minmax(240px,1fr))",
+          gap: 16,
+        }}
+      >
+        <article
+          style={{
+            background: "#fff",
+            border: "1px solid #e7e9f2",
+            borderRadius: 20,
+            padding: 20,
+            display: "flex",
+            alignItems: "center",
+            gap: 14,
+            boxShadow: "0 8px 24px rgba(16,24,40,.05)",
+          }}
+        >
+          <div
+            style={{
+              width: 52,
+              height: 52,
+              borderRadius: 16,
+              display: "grid",
+              placeItems: "center",
+              background: "#eef2ff",
+              color: "#4f46e5",
+            }}
+          >
+            <Building2 size={24} />
           </div>
 
-          {loadingData ? (
-            <div style={styles.loading}>
-              <Loader2 className="spin" />
-              Actualizando...
-            </div>
-          ) : (
-            <div style={styles.orgGrid}>
-              {organizations.map((org) => (
-                <article key={org.id} style={styles.orgCard}>
-                  <div style={styles.orgIcon}>
-                    <GraduationCap />
+          <div>
+            <p
+              style={{
+                margin: "0 0 4px",
+                color: "#667085",
+                fontSize: 13,
+              }}
+            >
+              Organizaciones
+            </p>
+
+            <strong style={{ fontSize: 28 }}>
+              {organizations.length}
+            </strong>
+          </div>
+        </article>
+      </section>
+
+      <section
+        style={{
+          maxWidth: 1450,
+          margin: "0 auto",
+          background: "#fff",
+          border: "1px solid #e7e9f2",
+          borderRadius: 24,
+          padding: 24,
+          boxShadow: "0 12px 35px rgba(16,24,40,.05)",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 16,
+            flexWrap: "wrap",
+          }}
+        >
+          <div>
+            <h2 style={{ margin: "0 0 5px", fontSize: 26 }}>
+              Organizaciones
+            </h2>
+
+            <p style={styles.muted}>
+              Clientes vinculados actualmente a CuotaFácil.
+            </p>
+          </div>
+        </div>
+
+        {loadingData ? (
+          <div style={styles.loading}>
+            <Loader2 className="spin" />
+            Actualizando...
+          </div>
+        ) : (
+          <div
+            style={{
+              marginTop: 22,
+              display: "grid",
+              gridTemplateColumns:
+                "repeat(auto-fit,minmax(300px,1fr))",
+              gap: 18,
+            }}
+          >
+            {organizations.map((org) => (
+              <article
+                key={org.id}
+                style={{
+                  border: "1px solid #e7e9f2",
+                  borderRadius: 20,
+                  padding: 20,
+                  background:
+                    "linear-gradient(180deg,#ffffff 0%,#fafaff 100%)",
+                  boxShadow: "0 8px 25px rgba(16,24,40,.04)",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 14,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 54,
+                      height: 54,
+                      borderRadius: 16,
+                      display: "grid",
+                      placeItems: "center",
+                      background: "#eef2ff",
+                      color: "#4f46e5",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <GraduationCap size={25} />
                   </div>
 
-                  <h3 style={{ margin: "16px 0 5px" }}>{org.name}</h3>
+                  <div>
+                    <h3
+                      style={{
+                        margin: "0 0 4px",
+                        fontSize: 19,
+                      }}
+                    >
+                      {org.name}
+                    </h3>
 
-                  <p style={styles.muted}>Organización activa</p>
-
-                  <div style={styles.chips}>
-                    <span style={styles.activeChip}>Activo</span>
-                    <span style={styles.planChip}>Cliente</span>
+                    <p style={styles.muted}>
+                      Organización cliente
+                    </p>
                   </div>
+                </div>
 
-                  {org.slug === "blanca-nieves" && (
-                    <div style={styles.orgStats}>
-                      <div>
-                        <strong>{students.length}</strong>
-                        <small> alumnos</small>
-                      </div>
-                      <div>
-                        <strong>{paidCount}</strong>
-                        <small> pagos</small>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 8,
+                    marginTop: 16,
+                  }}
+                >
+                  <span style={styles.activeChip}>Activo</span>
+                  <span style={styles.planChip}>Cliente</span>
+                </div>
+
+                {org.slug === "blanca-nieves" && (
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr",
+                      gap: 10,
+                      marginTop: 18,
+                      paddingTop: 16,
+                      borderTop: "1px solid #eaecf0",
+                    }}
+                  >
+                    <div>
+                      <strong style={{ fontSize: 18 }}>
+                        {students.length}
+                      </strong>
+                      <div
+                        style={{
+                          color: "#667085",
+                          fontSize: 12,
+                        }}
+                      >
+                        alumnos
                       </div>
                     </div>
-                  )}
 
-                  <button
-  style={styles.openButton}
-  onClick={() => {
-    setOrganization(org);
-    setModule("home");
-    setAdminOrganizationView(true);
+                    <div>
+                      <strong style={{ fontSize: 18 }}>
+                        {paidCount}
+                      </strong>
+                      <div
+                        style={{
+                          color: "#667085",
+                          fontSize: 12,
+                        }}
+                      >
+                        pagos
+                      </div>
+                    </div>
+                  </div>
+                )}
 
-    if (org.slug === "blanca-nieves") {
-      loadBlancaNieves();
-    }
-  }}
->
-  Ver organización →
-</button>
-                </article>
-              ))}
+                <button
+                  style={{
+                    width: "100%",
+                    marginTop: 18,
+                    border: 0,
+                    borderRadius: 12,
+                    padding: "12px 14px",
+                    background: "#eef2ff",
+                    color: "#4338ca",
+                    fontWeight: 800,
+                    cursor: "pointer",
+                  }}
+                  onClick={() => {
+                    setOrganization(org);
+                    setModule("home");
+                    setAdminOrganizationView(true);
 
-              {organizations.length === 0 && (
-                <p style={styles.muted}>Todavía no hay organizaciones.</p>
-              )}
-            </div>
-          )}
-        </section>
+                    if (org.slug === "blanca-nieves") {
+                      loadBlancaNieves();
+                    }
+                  }}
+                >
+                  Administrar organización →
+                </button>
+              </article>
+            ))}
 
-       
-      </main>
-    );
-  }
+            {organizations.length === 0 && (
+              <div
+                style={{
+                  gridColumn: "1 / -1",
+                  padding: 36,
+                  textAlign: "center",
+                  border: "1px dashed #d0d5dd",
+                  borderRadius: 18,
+                  color: "#667085",
+                }}
+              >
+                Todavía no hay organizaciones registradas.
+              </div>
+            )}
+          </div>
+        )}
+      </section>
+    </main>
+  );
+}
 
   return (
     <main style={styles.app}>
