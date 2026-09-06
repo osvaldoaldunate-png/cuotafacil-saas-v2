@@ -419,60 +419,6 @@ async function changePassword(e: React.FormEvent) {
     if (showLoader) setLoadingData(false);
   }
 async function saveStudent() {
-  async function deleteStudent(id: number, studentName: string) {
-  const confirmed = window.confirm(
-    `¿Estás seguro de eliminar a ${studentName}? Esta acción no se puede deshacer.`
-  );
-
-  if (!confirmed) return;
-
-  setLoadingData(true);
-  setMessage("");
-
-  const { error } = await supabase
-    .from("students")
-    .delete()
-    .eq("id", id);
-
-  if (error) {
-    console.error("DELETE STUDENT ERROR:", error);
-    setMessage(`No se pudo eliminar el alumno: ${error.message}`);
-    setLoadingData(false);
-    return;
-  }
-
-  await loadBlancaNieves(false);
-
-  setMessage("Alumno eliminado correctamente.");
-  setLoadingData(false);
-}
-  async function deleteStudent(id: number, studentName: string) {
-  const confirmed = window.confirm(
-    `¿Estás seguro de eliminar a ${studentName}? Esta acción no se puede deshacer.`
-  );
-
-  if (!confirmed) return;
-
-  setLoadingData(true);
-  setMessage("");
-
-  const { error } = await supabase
-    .from("students")
-    .delete()
-    .eq("id", id);
-
-  if (error) {
-    console.error("DELETE STUDENT ERROR:", error);
-    setMessage(`No se pudo eliminar el alumno: ${error.message}`);
-    setLoadingData(false);
-    return;
-  }
-
-  await loadBlancaNieves(false);
-
-  setMessage("Alumno eliminado correctamente.");
-  setLoadingData(false);
-}
   if (!studentForm.student.trim()) {
     setMessage("Debes ingresar el nombre del alumno.");
     return;
@@ -482,28 +428,28 @@ async function saveStudent() {
   setMessage("");
 
   const studentData = {
-  student: studentForm.student.trim(),
-  guardian: studentForm.guardian.trim() || null,
-  phone: studentForm.phone.trim() || null,
-  course: studentForm.course.trim() || null,
-  amount: studentForm.amount ? Number(studentForm.amount) : 0,
-  notes: studentForm.notes.trim() || null,
-};
+    student: studentForm.student.trim(),
+    guardian: studentForm.guardian.trim() || null,
+    phone: studentForm.phone.trim() || null,
+    course: studentForm.course.trim() || null,
+    amount: studentForm.amount ? Number(studentForm.amount) : 0,
+    notes: studentForm.notes.trim() || null,
+  };
 
-let result;
+  let result;
 
-if (editingStudentId !== null) {
-  result = await supabase
-    .from("students")
-    .update(studentData)
-    .eq("id", editingStudentId);
-} else {
-  result = await supabase
-    .from("students")
-    .insert(studentData);
-}
+  if (editingStudentId !== null) {
+    result = await supabase
+      .from("students")
+      .update(studentData)
+      .eq("id", editingStudentId);
+  } else {
+    result = await supabase
+      .from("students")
+      .insert(studentData);
+  }
 
-const { error } = result;
+  const { error } = result;
 
   if (error) {
     console.error("SAVE STUDENT ERROR:", error);
@@ -520,15 +466,48 @@ const { error } = result;
     amount: "",
     notes: "",
   });
-setEditingStudentId(null);
+
+  setEditingStudentId(null);
   setShowStudentForm(false);
 
   await loadBlancaNieves(false);
 
-  setMessage("Alumno agregado correctamente.");
+  setMessage(
+    editingStudentId !== null
+      ? "Alumno actualizado correctamente."
+      : "Alumno agregado correctamente."
+  );
+
   setLoadingData(false);
 }
-  const totalExpected = useMemo(
+
+async function deleteStudent(id: number, studentName: string) {
+  const confirmed = window.confirm(
+    `¿Estás seguro de eliminar a ${studentName}? Esta acción no se puede deshacer.`
+  );
+
+  if (!confirmed) return;
+
+  setLoadingData(true);
+  setMessage("");
+
+  const { error } = await supabase
+    .from("students")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    console.error("DELETE STUDENT ERROR:", error);
+    setMessage(`No se pudo eliminar el alumno: ${error.message}`);
+    setLoadingData(false);
+    return;
+  }
+
+  await loadBlancaNieves(false);
+
+  setMessage("Alumno eliminado correctamente.");
+  setLoadingData(false);
+}  const totalExpected = useMemo(
     () => students.reduce((sum, s) => sum + Number(s.amount || 0), 0),
     [students]
   );
