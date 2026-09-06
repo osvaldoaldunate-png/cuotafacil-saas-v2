@@ -33,6 +33,7 @@ type Organization = {
   id: string;
   name: string;
   slug: string;
+  logo_url: string | null;
 };
 
 type Membership = {
@@ -282,7 +283,7 @@ if (adminData) {
 
     const { data: orgData, error: orgError } = await supabase
       .from("organizations")
-      .select("id,name,slug")
+      .select("id,name,slug,logo_url")
       .eq("id", membership.org_id)
       .single();
 
@@ -1427,19 +1428,33 @@ if (recoveryMode) {
                   }}
                 >
                   <div
-                    style={{
-                      width: 54,
-                      height: 54,
-                      borderRadius: 16,
-                      display: "grid",
-                      placeItems: "center",
-                      background: "#eef2ff",
-                      color: "#4f46e5",
-                      flexShrink: 0,
-                    }}
-                  >
-                    <GraduationCap size={25} />
-                  </div>
+  style={{
+    width: 54,
+    height: 54,
+    borderRadius: 16,
+    display: "grid",
+    placeItems: "center",
+    background: "#eef2ff",
+    color: "#4f46e5",
+    flexShrink: 0,
+    overflow: "hidden",
+  }}
+>
+  {org.logo_url ? (
+    <img
+      src={org.logo_url}
+      alt={`Logo ${org.name}`}
+      style={{
+        width: "100%",
+        height: "100%",
+        objectFit: "contain",
+        background: "#fff",
+      }}
+    />
+  ) : (
+    <GraduationCap size={25} />
+  )}
+</div>
 
                   <div>
                     <h3
