@@ -803,11 +803,24 @@ if (recoveryMode) {
 
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
         <button
-          style={styles.primaryButton}
-          onClick={() => setShowStudentForm(true)}
-        >
-          + Agregar alumno
-        </button>
+  style={styles.primaryButton}
+  onClick={() => {
+    setEditingStudentId(null);
+
+    setStudentForm({
+      student: "",
+      guardian: "",
+      phone: "",
+      course: "",
+      amount: "",
+      notes: "",
+    });
+
+    setShowStudentForm(true);
+  }}
+>
+  + Agregar alumno
+</button>
 
         <div style={styles.searchBox}>
           <Search size={18} />
