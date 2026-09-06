@@ -446,6 +446,33 @@ async function saveStudent() {
   setMessage("Alumno eliminado correctamente.");
   setLoadingData(false);
 }
+  async function deleteStudent(id: number, studentName: string) {
+  const confirmed = window.confirm(
+    `¿Estás seguro de eliminar a ${studentName}? Esta acción no se puede deshacer.`
+  );
+
+  if (!confirmed) return;
+
+  setLoadingData(true);
+  setMessage("");
+
+  const { error } = await supabase
+    .from("students")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    console.error("DELETE STUDENT ERROR:", error);
+    setMessage(`No se pudo eliminar el alumno: ${error.message}`);
+    setLoadingData(false);
+    return;
+  }
+
+  await loadBlancaNieves(false);
+
+  setMessage("Alumno eliminado correctamente.");
+  setLoadingData(false);
+}
   if (!studentForm.student.trim()) {
     setMessage("Debes ingresar el nombre del alumno.");
     return;
