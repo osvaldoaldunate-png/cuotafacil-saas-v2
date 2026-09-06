@@ -1225,21 +1225,6 @@ if (recoveryMode) {
             label="Organizaciones"
             value={String(organizations.length)}
           />
-          <MetricCard
-            icon={<Users />}
-            label="Personas registradas"
-            value={String(students.length)}
-          />
-          <MetricCard
-            icon={<WalletCards />}
-            label="Pagos registrados"
-            value={String(paidCount)}
-          />
-          <MetricCard
-            icon={<ReceiptText />}
-            label="Comprobantes aprobados"
-            value={String(approvedSubmissions)}
-          />
         </section>
 
         <section style={styles.panel}>
