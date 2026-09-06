@@ -1302,25 +1302,7 @@ if (recoveryMode) {
           )}
         </section>
 
-        <section style={{ ...styles.panel, marginTop: 20 }}>
-          <h2 style={styles.sectionTitle}>Resumen Blanca Nieves</h2>
-          <p style={styles.muted}>
-            Primera organización real conectada a la plataforma.
-          </p>
-
-          <div style={{ ...styles.metricGrid, marginTop: 18 }}>
-            <SmallMetric label="Alumnos" value={String(students.length)} />
-            <SmallMetric label="Pagos" value={String(paidCount)} />
-            <SmallMetric
-              label="Comprobantes"
-              value={String(submissions.length)}
-            />
-            <SmallMetric
-              label="Monto base"
-              value={money(totalExpected)}
-            />
-          </div>
-        </section>
+       
       </main>
     );
   }
