@@ -99,6 +99,7 @@ const [newPassword, setNewPassword] = useState("");
   const [loadingData, setLoadingData] = useState(false);
   const [module, setModule] = useState<ClientModule>("home");
   const [adminOrganizationView, setAdminOrganizationView] = useState(false);
+  const [showOrganizationForm, setShowOrganizationForm] = useState(false);
   const [search, setSearch] = useState("");
   const [showStudentForm, setShowStudentForm] = useState(false);
   const [editingStudentId, setEditingStudentId] = useState<number | null>(null);
@@ -1249,6 +1250,12 @@ if (recoveryMode) {
                 Clientes vinculados actualmente a CuotaFácil.
               </p>
             </div>
+            <button
+  style={styles.primaryButton}
+  onClick={() => setShowOrganizationForm(true)}
+>
+  + Nueva organización
+</button>
           </div>
 
           {loadingData ? (
