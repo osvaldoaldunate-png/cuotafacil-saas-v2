@@ -394,6 +394,55 @@ async function changePassword(e: React.FormEvent) {
     setModule("home");
   }
 
+  async function createOrganization() {
+  const name = organizationForm.name.trim();
+
+  if (!name) {
+    setMessage("Debes ingresar el nombre de la organización.");
+    return;
+  }
+
+  const slug = name
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  setLoadingData(true);
+  setMessage("");
+
+  const { error } = await supabase
+    .from("organizations")
+    .insert({
+      name,
+      slug,
+      institution_type: organizationForm.institution_type,
+      primary_color: organizationForm.primary_color,
+      secondary_color: organizationForm.secondary_color,
+    });
+
+  if (error) {
+    console.error("CREATE ORGANIZATION ERROR:", error);
+    setMessage(`No se pudo crear la organización: ${error.message}`);
+    setLoadingData(false);
+    return;
+  }
+
+  setOrganizationForm({
+    name: "",
+    institution_type: "Colegio",
+    primary_color: "#4f46e5",
+    secondary_color: "#7c3aed",
+  });
+
+  setShowOrganizationForm(false);
+
+  await loadMasterPanel();
+
+  setMessage("Organización creada correctamente.");
+  setLoadingData(false);
+}
   async function loadMasterPanel() {
     setLoadingData(true);
 
