@@ -100,7 +100,14 @@ const [newPassword, setNewPassword] = useState("");
   const [loadingData, setLoadingData] = useState(false);
   const [module, setModule] = useState<ClientModule>("home");
   const [adminOrganizationView, setAdminOrganizationView] = useState(false);
+  const [showNewOrganizationForm, setShowNewOrganizationForm] = useState(false);
   const [showOrganizationForm, setShowOrganizationForm] = useState(false);
+  const [organizationForm, setOrganizationForm] = useState({
+  name: "",
+  institution_type: "Colegio",
+  primary_color: "#4f46e5",
+  secondary_color: "#7c3aed",
+});
   const [search, setSearch] = useState("");
   const [showStudentForm, setShowStudentForm] = useState(false);
   const [editingStudentId, setEditingStudentId] = useState<number | null>(null);
@@ -1393,6 +1400,125 @@ if (recoveryMode) {
           </div>
         </div>
 
+        {showOrganizationForm && (
+  <div
+    style={{
+      marginTop: 22,
+      marginBottom: 22,
+      padding: 22,
+      border: "1px solid #e7e9f2",
+      borderRadius: 18,
+      background: "#f8f9ff",
+    }}
+  >
+    <h3 style={{ margin: "0 0 6px", fontSize: 20 }}>
+      Nueva organización
+    </h3>
+
+    <p style={{ ...styles.muted, marginBottom: 18 }}>
+      Configura los datos principales de tu nuevo cliente.
+    </p>
+
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))",
+        gap: 14,
+      }}
+    >
+      <label style={styles.label}>
+        Nombre de la organización
+        <input
+          style={styles.input}
+          value={organizationForm.name}
+          onChange={(e) =>
+            setOrganizationForm({
+              ...organizationForm,
+              name: e.target.value,
+            })
+          }
+          placeholder="Ej: Colegio Los Andes"
+        />
+      </label>
+
+      <label style={styles.label}>
+        Tipo de institución
+        <select
+          style={styles.input}
+          value={organizationForm.institution_type}
+          onChange={(e) =>
+            setOrganizationForm({
+              ...organizationForm,
+              institution_type: e.target.value,
+            })
+          }
+        >
+          <option value="Colegio">Colegio</option>
+          <option value="Escuela">Escuela</option>
+          <option value="Academia">Academia</option>
+          <option value="Instituto">Instituto</option>
+          <option value="Club">Club</option>
+          <option value="Empresa">Empresa</option>
+          <option value="Otro">Otro</option>
+        </select>
+      </label>
+
+      <label style={styles.label}>
+        Color principal
+        <input
+          style={{ ...styles.input, height: 48 }}
+          type="color"
+          value={organizationForm.primary_color}
+          onChange={(e) =>
+            setOrganizationForm({
+              ...organizationForm,
+              primary_color: e.target.value,
+            })
+          }
+        />
+      </label>
+
+      <label style={styles.label}>
+        Color secundario
+        <input
+          style={{ ...styles.input, height: 48 }}
+          type="color"
+          value={organizationForm.secondary_color}
+          onChange={(e) =>
+            setOrganizationForm({
+              ...organizationForm,
+              secondary_color: e.target.value,
+            })
+          }
+        />
+      </label>
+    </div>
+
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "flex-end",
+        gap: 10,
+        marginTop: 20,
+      }}
+    >
+      <button
+        type="button"
+        style={styles.secondaryButton}
+        onClick={() => setShowOrganizationForm(false)}
+      >
+        Cancelar
+      </button>
+
+      <button
+        type="button"
+        style={styles.primaryButton}
+      >
+        Crear organización
+      </button>
+    </div>
+  </div>
+)}
         {loadingData ? (
           <div style={styles.loading}>
             <Loader2 className="spin" />
