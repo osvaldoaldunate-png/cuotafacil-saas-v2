@@ -1560,11 +1560,13 @@ if (recoveryMode) {
       </button>
 
       <button
-        type="button"
-        style={styles.primaryButton}
-      >
-        Crear organización
-      </button>
+  type="button"
+  style={styles.primaryButton}
+  onClick={createOrganization}
+  disabled={loadingData}
+>
+  {loadingData ? "Creando..." : "Crear organización"}
+</button>
     </div>
   </div>
 )}
